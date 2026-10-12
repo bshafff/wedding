@@ -1,0 +1,121 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Seserahan">
+<title>Seserahan Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf6f2;--card:#fff;--ink:#2a1618;--mute:#7a6a66;--wine:#8f1d21;--gold:#b8893b;--sage:#5f7f62;--line:#eadfd8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Figtree,system-ui,sans-serif;padding-bottom:76px}
+h1,.num{font-family:Fraunces,Georgia,serif;font-weight:600}
+header{background:var(--wine);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px}
+header h1{margin:0;font-size:22px}header small{opacity:.8}
+header button{float:right;background:none;border:1px solid #fff6;color:#fff;border-radius:8px;padding:4px 10px}
+main{padding:14px;max-width:640px;margin:auto}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.big{font-size:34px;color:var(--wine);line-height:1}.row{display:flex;gap:10px;justify-content:space-between;align-items:center}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mute{color:var(--mute);font-size:13px}
+.bar{height:9px;background:var(--line);border-radius:5px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--sage)}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:14px 0;border:0;background:none;font:600 14px Figtree,sans-serif;color:var(--mute)}nav button.on{color:var(--wine);box-shadow:inset 0 3px var(--wine)}
+.chips{display:flex;gap:8px;margin-bottom:10px}.chips button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 14px;font:inherit}.chips .on{background:var(--wine);color:#fff;border-color:var(--wine)}
+input[type=search],input[type=date],input[type=number],input[type=url]{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+.it{display:flex;gap:12px;align-items:flex-start}.it input[type=checkbox]{width:22px;height:22px;accent-color:var(--sage);margin-top:2px}
+.it .t{flex:1}.done .nm{text-decoration:line-through;color:var(--mute)}.tag{font-size:12px;color:var(--gold);font-weight:600}
+.ex{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.ex label{font-size:12px;color:var(--mute)}
+.leg{display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0}.leg b{width:10px;height:10px;border-radius:3px}
+#st{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;display:none;z-index:9}
+</style></head><body>
+<header><button onclick="cfg()">Sheet</button><h1>Seserahan Tracker</h1><small id="sub"></small><small id="sy"></small></header>
+<div id="st"></div><main id="m"></main>
+<nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
+<script>
+const DEFAULT_URL=''; // opsional: isi URL Web App di sini agar otomatis tersambung
+const $=s=>document.querySelector(s),R=n=>'Rp'+Math.round(n).toLocaleString('id-ID'),K='sr_url',D='sr_data';
+const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
+let lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
+const SAMPLE=[['Alat shalat','Mukena',250000],['Alat shalat','Sajadah couple',200000],['Toileteries','Set haircare',280000],['Skincare','Sunscreen',70000],['Makeup','Foundation',140000],['Makeup','Lipcream',70000]].map((x,i)=>({no:i+1,cat:x[0],item:x[1],qty:1,unit:'pcs',price:x[2],total:x[2],notes:'',done:i<2,tgl:i<2?'2026-09-20':'',real:i<2?x[2]:0}));
+function toast(t){const e=$('#st');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
+async function load(){const u=localStorage[K];
+ if(!u){demo=true;items=localStorage[D]?JSON.parse(localStorage[D]):SAMPLE;draw();return}
+ demo=false;if(q_().length){stat();return}
+ try{items=await(await fetch(u)).json();localStorage[D]=JSON.stringify(items);lastSync=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
+ catch(e){if(!items.length)items=JSON.parse(localStorage[D]||'[]');toast('Offline, memakai data terakhir')}
+ if(!document.activeElement||!document.activeElement.matches('input'))draw();else stat()}
+async function sync(){await flush();await load()}
+function q_(){return JSON.parse(localStorage.sr_q||'[]')}
+function setq(a){localStorage.sr_q=JSON.stringify(a);stat()}
+function queue(p){const a=q_();a.push(p);setq(a);flush().then(load)}
+let busy=false;
+async function flush(){const u=localStorage[K];if(!u||busy||!navigator.onLine)return;busy=true;let a=q_();
+ while(a.length){try{await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(a[0])});a.shift();setq(a)}catch(e){toast('Belum tersambung, perubahan menunggu');break}}
+ busy=false}
+function stat(){const n=q_().length,e=$('#sy');if(!e)return;e.textContent=!localStorage[K]?'':n?' · '+n+' perubahan menunggu sinkron':!navigator.onLine?' · offline':lastSync?' · tersinkron '+lastSync:''}
+function cfg(){const v=prompt('Tempel URL Web App Apps Script (…/exec). Kosongkan untuk mode demo:',localStorage[K]||'');
+ if(v===null)return;v?localStorage[K]=v.trim():localStorage.removeItem(K);delete localStorage[D];load()}
+function save(it){localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({no:it.no,done:it.done,tgl:it.tgl,real:it.real})}
+function tot(){const b=items.reduce((a,x)=>a+x.total,0),d=items.filter(x=>x.done),r=d.reduce((a,x)=>a+(x.real||x.total),0),bd=d.reduce((a,x)=>a+x.total,0);
+ return{b,n:items.length,dn:d.length,r,bd,sisa:b-bd,pct:items.length?d.length/items.length*100:0}}
+function draw(){stat();const t=tot();$('#sub').textContent=(demo?'Mode demo · ':'')+t.dn+' dari '+t.n+' item sudah dibeli';
+ $('#m').innerHTML=tab==='s'?sum(t):tab==='l'?list():charts(t)}
+function sum(t){const nx=items.filter(x=>!x.done&&x.tgl).sort((a,b)=>a.tgl.localeCompare(b.tgl)).slice(0,4);const sel=t.r-t.bd;
+ return`<div class="card"><div class="mute">Total realisasi</div><div class="num big">${R(t.r)}</div>
+ <div class="bar"><i style="width:${t.pct}%"></i></div><div class="mute">${t.pct.toFixed(0)}% item terbeli · anggaran ${R(t.b)}</div></div>
+ <div class="grid"><div class="card"><div class="mute">Belum dibeli</div><div class="num" style="font-size:22px">${R(t.sisa)}</div><div class="mute">${t.n-t.dn} item</div></div>
+ <div class="card"><div class="mute">Selisih vs anggaran</div><div class="num" style="font-size:22px;color:${sel>0?'var(--wine)':'var(--sage)'}">${sel>0?'+':''}${R(sel)}</div><div class="mute">${sel>0?'lebih mahal':'lebih hemat'}</div></div></div>
+ <div class="card"><b>Jadwal beli terdekat</b>${nx.length?nx.map(x=>`<div class="row" style="margin-top:8px"><span>${x.item}</span><span class="tag">${fd(x.tgl)}</span></div>`).join(''):'<p class="mute">Belum ada tanggal rencana. Buka Daftar, pilih item, isi tanggalnya.</p>'}</div>`}
+const fd=s=>new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+function list(){let a=items.filter(x=>flt==='semua'||(flt==='belum')!==x.done).filter(x=>(x.item+x.cat+x.notes).toLowerCase().includes(q));
+ if(flt==='belum')a.sort((x,y)=>(x.tgl||'9').localeCompare(y.tgl||'9'));
+ return`<div class="chips">${['belum','sudah','semua'].map(f=>`<button class="${f===flt?'on':''}" onclick="flt='${f}';draw()">${f[0].toUpperCase()+f.slice(1)}</button>`).join('')}</div>
+ <input type="search" placeholder="Cari item atau kategori" value="${q}" oninput="q=this.value.toLowerCase();draw();this.focus()" style="margin-bottom:10px">
+ <div class="row" style="margin-bottom:12px"><button onclick="adding=!adding;importing=false;draw()" style="${bs}flex:1;border:1px dashed var(--wine);background:none;color:var(--wine)">${adding?'Batal':'+ Tambah item'}</button><button onclick="importing=!importing;adding=false;draw()" style="${bs}flex:1;border:1px dashed var(--wine);background:none;color:var(--wine)">${importing?'Batal':'Import CSV'}</button></div>`+(adding?`<div class="card"><div class="ex" style="margin:0">
+ <div style="grid-column:1/3"><label>Nama item</label><input id="a_i" type="search"></div>
+ <div><label>Kategori</label><input id="a_c" type="search" list="cl" placeholder="Makeup, Skincare…"><datalist id="cl">${[...new Set(items.map(x=>x.cat))].map(c=>`<option value="${c}">`).join('')}</datalist></div>
+ <div><label>Merk / catatan</label><input id="a_n" type="search"></div>
+ <div><label>Qty</label><input id="a_q" type="number" value="1"></div><div><label>Harga satuan (Rp)</label><input id="a_p" type="number"></div>
+ <div style="grid-column:1/3"><label>Link / nama tempat</label><input id="a_l" type="search"></div>
+ <div style="grid-column:1/3"><label>Tanggal rencana beli (opsional)</label><input id="a_t" type="date"></div>
+ <button onclick="add()" style="grid-column:1/3;padding:12px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan item</button></div></div>`:'')+(importing?impPanel():'')+
+ a.map(x=>`<div class="card ${x.done?'done':''}"><div class="it"><input type="checkbox" ${x.done?'checked':''} onchange="tg(${x.no},this.checked)">
+ <div class="t" onclick="open=open===${x.no}?null:${x.no};draw()"><div class="nm"><b>${x.item}</b></div><div class="mute">${x.cat} · ${x.qty} ${x.unit||''} · ${R(x.total)}</div>
+ <div class="tag">${x.tgl?(x.done?'Dibeli ':'Rencana ')+fd(x.tgl):'Belum ada tanggal'}</div>${x.notes?`<div class="mute">${x.notes}</div>`:''}</div></div>
+ ${open===x.no?`<div class="ex"><div><label>Tanggal rencana / beli</label><input type="date" value="${x.tgl}" onchange="up(${x.no},'tgl',this.value)"></div>
+ <div><label>Realisasi (Rp)</label><input type="number" value="${x.real||''}" placeholder="${x.total}" onchange="up(${x.no},'real',+this.value)"></div></div>`:''}</div>`).join('')||'<p class="mute">Tidak ada item.</p>'}
+function addLocal(list){let n=Math.max(0,...items.map(x=>x.no));list.forEach(d=>items.push({no:++n,cat:d.cat,item:d.item,qty:d.qty,unit:'pcs',price:d.price,total:d.price*d.qty,link:d.link,notes:d.notes,done:false,tgl:d.tgl||'',real:0}));localStorage[D]=JSON.stringify(items)}
+function commit(list){addLocal(list);if(localStorage[K])queue({action:'addMany',list});draw()}
+function add(){const g=i=>$('#'+i).value.trim(),item=g('a_i'),price=+g('a_p'),qty=+g('a_q')||1;
+ if(!item||!price){toast('Isi nama item dan harga');return}
+ adding=false;commit([{item,cat:g('a_c')||'Lain-lain',qty,unit:'pcs',price,link:g('a_l'),notes:g('a_n'),tgl:g('a_t')}]);toast('Item ditambahkan')}
+function parse(t){t=t.replace(/^\uFEFF/,'');const h=t.split('\n')[0],sep=(h.match(/;/g)||[]).length>(h.match(/,/g)||[]).length?';':',';
+ const rows=[];let r=[],c='',qt=false;
+ for(let i=0;i<t.length;i++){const ch=t[i];
+  if(qt){if(ch=='"'&&t[i+1]=='"'){c+='"';i++}else if(ch=='"')qt=false;else c+=ch}
+  else if(ch=='"')qt=true;else if(ch==sep){r.push(c);c=''}else if(ch=='\n'){r.push(c);rows.push(r);r=[];c=''}else if(ch!='\r')c+=ch}
+ if(c||r.length){r.push(c);rows.push(r)}return rows}
+const num=x=>+String(x||'').replace(/[^\d]/g,'')||0,pad=n=>String(n).padStart(2,'0');
+function dt(x){x=(x||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(x))return x;const m=x.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);return m?m[3]+'-'+pad(m[2])+'-'+pad(m[1]):''}
+function rd(f){if(!f)return;f.text().then(t=>{imp=parse(t).slice(1).filter(r=>r[0]&&r[0].trim()).map(r=>({item:r[0].trim(),cat:(r[1]||'').trim()||'Lain-lain',qty:+r[2]||1,price:num(r[3]),notes:(r[4]||'').trim(),link:(r[5]||'').trim(),tgl:dt(r[6]),unit:'pcs'}));if(!imp.length)toast('Tidak ada baris terbaca');draw()})}
+function doImp(){commit(imp);toast(imp.length+' item diimpor');imp=[];importing=false;draw()}
+function tpl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFFItem;Kategori;Qty;Harga satuan;Merk/Catatan;Link/Tempat;Tanggal rencana\nMukena;Alat shalat;1;250000;Tazbiya;tiktokshop;2026-11-15\nSunscreen;Skincare;1;70000;Facetology;Tiktokshop;\n'],{type:'text/csv'}));a.download='template-import-seserahan.csv';a.click()}
+const bs='padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;';
+function impPanel(){return`<div class="card"><b>Import dari CSV</b><p class="mute">Kolom: Item; Kategori; Qty; Harga satuan; Merk/Catatan; Link/Tempat; Tanggal rencana (yyyy-mm-dd atau dd/mm/yyyy). Baris pertama adalah header.</p>
+<button onclick="tpl()" style="${bs}border:1px solid var(--wine);background:none;color:var(--wine)">Unduh template</button>
+<input type="file" accept=".csv,.txt" onchange="rd(this.files[0])" style="display:block;margin:12px 0">
+${imp.length?`<div class="mute" style="margin-bottom:8px">${imp.length} item siap: ${imp.slice(0,3).map(x=>x.item).join(', ')}${imp.length>3?'…':''}</div><button onclick="doImp()" style="${bs}width:100%;border:0;background:var(--wine);color:#fff">Impor ${imp.length} item</button>`:''}</div>`}
+function tg(n,v){const x=items.find(i=>i.no===n);x.done=v;if(v){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total}save(x);draw()}
+function up(n,k,v){const x=items.find(i=>i.no===n);x[k]=v;save(x);draw()}
+function donut(parts){const s=parts.reduce((a,p)=>a+p.v,0)||1;let o=0;const r=52,c=2*Math.PI*r;
+ return`<svg viewBox="0 0 140 140" width="150"><g transform="rotate(-90 70 70)">${parts.map((p,i)=>{const l=p.v/s*c,e=`<circle cx="70" cy="70" r="${r}" fill="none" stroke="${COL[i%8]}" stroke-width="22" stroke-dasharray="${l} ${c-l}" stroke-dashoffset="${-o}"/>`;o+=l;return e}).join('')}</g></svg>`}
+function charts(t){const cats={};items.forEach(x=>{const c=cats[x.cat]=cats[x.cat]||{b:0,r:0,n:0,d:0};c.b+=x.total;c.n++;if(x.done){c.r+=x.real||x.total;c.d++}});
+ const cl=Object.entries(cats).sort((a,b)=>b[1].b-a[1].b);const mo={};items.filter(x=>x.done&&x.tgl).forEach(x=>{const k=x.tgl.slice(0,7);mo[k]=(mo[k]||0)+(x.real||x.total)});
+ const ml=Object.entries(mo).sort(),mx=Math.max(1,...ml.map(m=>m[1]));
+ return`<div class="card"><b>Porsi anggaran per kategori</b><div class="row" style="margin-top:8px">${donut(cl.map(c=>({v:c[1].b})))}<div>${cl.map((c,i)=>`<div class="leg"><b style="background:${COL[i%8]}"></b>${c[0]} ${(c[1].b/t.b*100).toFixed(0)}%</div>`).join('')}</div></div></div>
+ <div class="card"><b>Progres belanja per kategori</b>${cl.map(c=>`<div style="margin-top:10px"><div class="row"><span>${c[0]}</span><span class="mute">${c[1].d}/${c[1].n} · ${c[1].b?(c[1].r/c[1].b*100).toFixed(0):0}% dari anggaran</span></div><div class="bar"><i style="width:${Math.min(100,c[1].r/c[1].b*100)}%"></i></div></div>`).join('')}</div>
+ <div class="card"><b>Tren realisasi per bulan</b>${ml.length?`<div class="row" style="align-items:flex-end;height:130px;margin-top:10px">${ml.map(m=>`<div style="flex:1;text-align:center"><div class="mute" style="font-size:11px">${R(m[1]/1000)}rb</div><div style="background:var(--wine);height:${m[1]/mx*90}px;border-radius:4px 4px 0 0"></div><div class="mute">${m[0].slice(5)}/${m[0].slice(2,4)}</div></div>`).join('')}</div>`:'<p class="mute">Muncul setelah ada item yang dicentang dengan tanggal.</p>'}</div>`}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tab=b.dataset.t;draw()});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+const _p=new URLSearchParams(location.search).get('api');if(_p){localStorage[K]=_p;history.replaceState(null,'',location.pathname)}
+if(!localStorage[K]&&DEFAULT_URL)localStorage[K]=DEFAULT_URL;
+if(localStorage[D]){items=JSON.parse(localStorage[D]);draw()}
+sync();setInterval(()=>{if(!document.hidden)sync()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});addEventListener('online',sync);addEventListener('offline',stat);
+</script></body></html>
