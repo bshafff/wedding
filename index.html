@@ -29,10 +29,10 @@ input[type=search],input[type=date],input[type=number],input[type=url]{width:100
 <div id="st"></div><main id="m"></main>
 <nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
 <script>
-const DEFAULT_URL=''; // opsional: isi URL Web App di sini agar otomatis tersambung
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbymWZY8rzHVVL4I3hhTfi2tKVk49GTWhnWY7pqjdPxG0f6i4Js9Uv6T6TBRBElnwJFb/exec'; // dipakai tombol Sambung
 const $=s=>document.querySelector(s),R=n=>'Rp'+Math.round(n).toLocaleString('id-ID'),K='sr_url',D='sr_data';
 const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
-let editing=null,lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
+let demoOn=false,editing=null,lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
 const SAMPLE=[['Alat shalat','Mukena',250000],['Alat shalat','Sajadah couple',200000],['Toileteries','Set haircare',280000],['Skincare','Sunscreen',70000],['Makeup','Foundation',140000],['Makeup','Lipcream',70000]].map((x,i)=>({no:i+1,cat:x[0],item:x[1],qty:1,unit:'pcs',price:x[2],total:x[2],notes:'',done:i<2,tgl:i<2?'2026-09-20':'',real:i<2?x[2]:0}));
 function toast(t){const e=$('#st');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
 async function load(){const u=localStorage[K];
@@ -52,12 +52,17 @@ async function flush(){const u=localStorage[K];if(!u||busy||!navigator.onLine)re
 function stat(){const n=q_().length,e=$('#sy'),c=$('#cn');if(!e)return;
  c.textContent=navigator.onLine?'🟢 Online':'🔴 Offline · data tersimpan lokal';
  e.textContent=!localStorage[K]?'':n?' · '+n+' perubahan menunggu sinkron':lastSync?' · tersinkron '+lastSync+' · auto-sync aktif':''}
+function welcome(){return`<div class="card" style="text-align:center;padding:30px 18px"><div class="num" style="font-size:24px;color:var(--wine)">Sambungkan ke Google Sheet</div>
+<p class="mute" style="margin:10px 0 20px">Ketuk sekali untuk memuat daftar seserahan dan menyinkronkan semua perubahan.</p>
+<button onclick="connect()" style="padding:14px 40px;border:0;border-radius:30px;background:var(--wine);color:#fff;font:600 16px Figtree,sans-serif">Sambung</button>
+<p style="margin-top:18px"><a href="#" class="mute" onclick="demoOn=true;load();return false">Coba mode demo dulu</a></p></div>`}
+function connect(){localStorage[K]=DEFAULT_URL;delete localStorage[D];items=[];toast('Menyambungkan...');sync()}
 function cfg(){const v=prompt('Tempel URL Web App Apps Script (…/exec). Kosongkan untuk mode demo:',localStorage[K]||'');
  if(v===null)return;v?localStorage[K]=v.trim():localStorage.removeItem(K);delete localStorage[D];load()}
 function save(it){localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({no:it.no,done:it.done,tgl:it.tgl,real:it.real})}
 function tot(){const b=items.reduce((a,x)=>a+x.total,0),d=items.filter(x=>x.done),r=d.reduce((a,x)=>a+(x.real||x.total),0),bd=d.reduce((a,x)=>a+x.total,0);
  return{b,n:items.length,dn:d.length,r,bd,sisa:b-bd,pct:items.length?d.length/items.length*100:0}}
-function draw(){stat();const t=tot();$('#sub').textContent=(demo?'Mode demo · ':'')+t.dn+' dari '+t.n+' item sudah dibeli';
+function draw(){stat();if(!localStorage[K]&&DEFAULT_URL&&!demoOn){$('#sub').textContent='Belum tersambung';$('#m').innerHTML=welcome();return}const t=tot();$('#sub').textContent=(demo?'Mode demo · ':'')+t.dn+' dari '+t.n+' item sudah dibeli';
  $('#m').innerHTML=tab==='s'?sum(t):tab==='l'?list():charts(t)}
 function sum(t){const nx=items.filter(x=>!x.done&&x.tgl).sort((a,b)=>a.tgl.localeCompare(b.tgl)).slice(0,4);const sel=t.r-t.bd;
  return`<div class="card"><div class="mute">Total realisasi</div><div class="num big">${R(t.r)}</div>
@@ -140,7 +145,6 @@ addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;showInst('⬇
 addEventListener('appinstalled',rmInst);
 if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!(matchMedia('(display-mode: standalone)').matches||navigator.standalone))showInst('⬇️ Cara pasang di iPhone',()=>alert('Buka lewat Safari, ketuk tombol Bagikan, lalu pilih "Tambah ke Layar Utama".'));
 const _p=new URLSearchParams(location.search).get('api');if(_p){localStorage[K]=_p;history.replaceState(null,'',location.pathname)}
-if(!localStorage[K]&&DEFAULT_URL)localStorage[K]=DEFAULT_URL;
 if(localStorage[D]){items=JSON.parse(localStorage[D]);draw()}
 sync();setInterval(()=>{if(!document.hidden)sync()},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});addEventListener('online',()=>{toast('Kembali online, menyinkronkan...');stat();sync()});addEventListener('offline',()=>{stat();toast('Mode offline, data disimpan lokal')});
