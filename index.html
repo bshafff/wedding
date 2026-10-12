@@ -38,12 +38,12 @@ input[type=search],input[type=date],input[type=number],input[type=url]{width:100
 <div id="st"></div><main id="m"></main>
 <nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
 <script>
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyIncsn5kBQD0pSwmNKGCA5aVYgdMCuV1uonXteOzP4qGeOEokVC1Sztvh-MWXKr4_0/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzkcnLwpjhvDJBuOLXxt68UO8zO-U9dNGIUwCaZ4Q4XsxTReymDKjabY9c5u48eRYA/exec';
 const $=s=>document.querySelector(s),R=n=>'Rp'+Math.round(n).toLocaleString('id-ID'),K='sr_url',D='sr_data';
 const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
 let demoOn=false,editing=null,lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
 const SAMPLE=[['Alat shalat','Mukena',250000],['Alat shalat','Sajadah couple',200000],['Toileteries','Set haircare',280000],['Skincare','Sunscreen',70000],['Makeup','Foundation',140000],['Makeup','Lipcream',70000]].map((x,i)=>({no:i+1,cat:x[0],item:x[1],qty:1,unit:'pcs',price:x[2],total:x[2],notes:'',done:i<2,tgl:i<2?'2026-09-20':'',real:i<2?x[2]:0}));
-function toast(t){const e=$('#st');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
+function toast(t,ms){const e=$('#st');e.textContent=t;e.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(()=>e.style.display='none',ms||1800)}
 async function load(){const u=localStorage[K];
  if(!u){demo=true;items=localStorage[D]?JSON.parse(localStorage[D]):SAMPLE;draw();return}
  demo=false;if(q_().length){stat();return}
@@ -202,20 +202,28 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.query
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.error('SW gagal:',e)));
 
 // ===== AUTO UPDATE =====
-async function checkUpdate(){
+async function checkUpdate(silent){
   try{
     const r=await fetch('./version.json?t='+Date.now(),{cache:'no-store'});
     const j=await r.json();
     const seen=localStorage.app_v;
-    if(!seen){ localStorage.app_v=j.v; return false; }
+    if(!seen){
+      localStorage.app_v=j.v;
+      if(!silent) toast('Versi tersimpan: '+j.v);
+      return 'first';
+    }
     if(j.v!==seen){
       console.log('Versi baru terdeteksi:',j.v,'(lama:',seen,')');
       localStorage.app_v=j.v;
-      await hardReset();
-      return true;
+      return j.v;
     }
-  }catch(e){ console.warn('Cek update gagal:',e); }
-  return false;
+    if(!silent) toast('Sudah versi terbaru ('+seen+')');
+    return 'latest';
+  }catch(e){
+    console.warn('Cek update gagal:',e);
+    if(!silent) toast('Gagal cek update, coba lagi');
+    return 'error';
+  }
 }
 async function hardReset(){
   try{
@@ -232,10 +240,12 @@ async function hardReset(){
 }
 async function manualUpdate(){
   toast('Memeriksa update...');
-  const had=await checkUpdate();
-  if(!had){
-    await hardReset();
-  }
+  const r=await checkUpdate(true);
+  if(r==='error'){ toast('Gagal cek update, periksa koneksi'); return; }
+  if(r==='first'){ toast('Versi tersimpan, memuat ulang...'); await hardReset(); return; }
+  if(r==='latest'){ toast('Sudah versi terbaru · bersihkan cache...'); setTimeout(hardReset,600); return; }
+  toast('Versi baru '+r+' · memuat ulang...');
+  setTimeout(hardReset,600);
 }
 
 let dp=null;
@@ -248,7 +258,7 @@ addEventListener('appinstalled',rmInst);
 if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!(matchMedia('(display-mode: standalone)').matches||navigator.standalone))showInst('⬇️ Cara pasang di iPhone',()=>alert('Buka lewat Safari, ketuk tombol Bagikan, lalu pilih "Tambah ke Layar Utama".'));
 const _p=new URLSearchParams(location.search).get('api');if(_p){localStorage[K]=_p;history.replaceState(null,'',location.pathname)}
 if(localStorage[D]){items=JSON.parse(localStorage[D]);draw()}
-checkUpdate();
+checkUpdate(true);
 sync();setInterval(()=>{if(!document.hidden)sync()},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});addEventListener('online',()=>{toast('Kembali online, menyinkronkan...');stat();sync()});addEventListener('offline',()=>{stat();toast('Mode offline, data disimpan lokal')});
 </script></body></html>
