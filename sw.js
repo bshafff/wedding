@@ -1,5 +1,5 @@
 // Seserahan Tracker SW v3: install tidak gagal walau satu file belum terunggah
-const CACHE_NAME='seserahan-v3';
+const CACHE_NAME='seserahan-v4';
 const urlsToCache=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{self.skipWaiting();
  e.waitUntil(caches.open(CACHE_NAME).then(c=>Promise.allSettled(urlsToCache.map(u=>c.add(u).catch(err=>console.warn('Gagal cache:',u,err))))))});
