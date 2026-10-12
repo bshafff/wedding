@@ -23,15 +23,16 @@ input[type=search],input[type=date],input[type=number],input[type=url]{width:100
 .ex{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.ex label{font-size:12px;color:var(--mute)}
 .leg{display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0}.leg b{width:10px;height:10px;border-radius:3px}
 #st{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;display:none;z-index:9}
+.badge{display:inline-block;font-size:12px;padding:2px 9px;border-radius:10px;background:#ffffff30;margin-top:6px}
 </style></head><body>
-<header><button onclick="cfg()">Sheet</button><h1>Seserahan Tracker</h1><small id="sub"></small><small id="sy"></small></header>
+<header><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()" style="margin-right:6px">Sync</button><h1>Seserahan Tracker</h1><small id="sub"></small><small id="sy"></small><div><span id="cn" class="badge"></span></div></header>
 <div id="st"></div><main id="m"></main>
 <nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
 <script>
 const DEFAULT_URL=''; // opsional: isi URL Web App di sini agar otomatis tersambung
 const $=s=>document.querySelector(s),R=n=>'Rp'+Math.round(n).toLocaleString('id-ID'),K='sr_url',D='sr_data';
 const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
-let lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
+let editing=null,lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
 const SAMPLE=[['Alat shalat','Mukena',250000],['Alat shalat','Sajadah couple',200000],['Toileteries','Set haircare',280000],['Skincare','Sunscreen',70000],['Makeup','Foundation',140000],['Makeup','Lipcream',70000]].map((x,i)=>({no:i+1,cat:x[0],item:x[1],qty:1,unit:'pcs',price:x[2],total:x[2],notes:'',done:i<2,tgl:i<2?'2026-09-20':'',real:i<2?x[2]:0}));
 function toast(t){const e=$('#st');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800)}
 async function load(){const u=localStorage[K];
@@ -39,7 +40,7 @@ async function load(){const u=localStorage[K];
  demo=false;if(q_().length){stat();return}
  try{items=await(await fetch(u)).json();localStorage[D]=JSON.stringify(items);lastSync=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
  catch(e){if(!items.length)items=JSON.parse(localStorage[D]||'[]');toast('Offline, memakai data terakhir')}
- if(!document.activeElement||!document.activeElement.matches('input'))draw();else stat()}
+ if((!document.activeElement||!document.activeElement.matches('input'))&&editing===null&&!adding&&!importing)draw();else stat()}
 async function sync(){await flush();await load()}
 function q_(){return JSON.parse(localStorage.sr_q||'[]')}
 function setq(a){localStorage.sr_q=JSON.stringify(a);stat()}
@@ -48,7 +49,9 @@ let busy=false;
 async function flush(){const u=localStorage[K];if(!u||busy||!navigator.onLine)return;busy=true;let a=q_();
  while(a.length){try{await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(a[0])});a.shift();setq(a)}catch(e){toast('Belum tersambung, perubahan menunggu');break}}
  busy=false}
-function stat(){const n=q_().length,e=$('#sy');if(!e)return;e.textContent=!localStorage[K]?'':n?' · '+n+' perubahan menunggu sinkron':!navigator.onLine?' · offline':lastSync?' · tersinkron '+lastSync:''}
+function stat(){const n=q_().length,e=$('#sy'),c=$('#cn');if(!e)return;
+ c.textContent=navigator.onLine?'🟢 Online':'🔴 Offline · data tersimpan lokal';
+ e.textContent=!localStorage[K]?'':n?' · '+n+' perubahan menunggu sinkron':lastSync?' · tersinkron '+lastSync+' · auto-sync aktif':''}
 function cfg(){const v=prompt('Tempel URL Web App Apps Script (…/exec). Kosongkan untuk mode demo:',localStorage[K]||'');
  if(v===null)return;v?localStorage[K]=v.trim():localStorage.removeItem(K);delete localStorage[D];load()}
 function save(it){localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({no:it.no,done:it.done,tgl:it.tgl,real:it.real})}
@@ -78,8 +81,7 @@ function list(){let a=items.filter(x=>flt==='semua'||(flt==='belum')!==x.done).f
  a.map(x=>`<div class="card ${x.done?'done':''}"><div class="it"><input type="checkbox" ${x.done?'checked':''} onchange="tg(${x.no},this.checked)">
  <div class="t" onclick="open=open===${x.no}?null:${x.no};draw()"><div class="nm"><b>${x.item}</b></div><div class="mute">${x.cat} · ${x.qty} ${x.unit||''} · ${R(x.total)}</div>
  <div class="tag">${x.tgl?(x.done?'Dibeli ':'Rencana ')+fd(x.tgl):'Belum ada tanggal'}</div>${x.notes?`<div class="mute">${x.notes}</div>`:''}</div></div>
- ${open===x.no?`<div class="ex"><div><label>Tanggal rencana / beli</label><input type="date" value="${x.tgl}" onchange="up(${x.no},'tgl',this.value)"></div>
- <div><label>Realisasi (Rp)</label><input type="number" value="${x.real||''}" placeholder="${x.total}" onchange="up(${x.no},'real',+this.value)"></div></div>`:''}</div>`).join('')||'<p class="mute">Tidak ada item.</p>'}
+ ${open===x.no?exp(x):''}</div>`).join('')||'<p class="mute">Tidak ada item.</p>'}
 function addLocal(list){let n=Math.max(0,...items.map(x=>x.no));list.forEach(d=>items.push({no:++n,cat:d.cat,item:d.item,qty:d.qty,unit:'pcs',price:d.price,total:d.price*d.qty,link:d.link,notes:d.notes,done:false,tgl:d.tgl||'',real:0}));localStorage[D]=JSON.stringify(items)}
 function commit(list){addLocal(list);if(localStorage[K])queue({action:'addMany',list});draw()}
 function add(){const g=i=>$('#'+i).value.trim(),item=g('a_i'),price=+g('a_p'),qty=+g('a_q')||1;
@@ -101,6 +103,22 @@ function impPanel(){return`<div class="card"><b>Import dari CSV</b><p class="mut
 <button onclick="tpl()" style="${bs}border:1px solid var(--wine);background:none;color:var(--wine)">Unduh template</button>
 <input type="file" accept=".csv,.txt" onchange="rd(this.files[0])" style="display:block;margin:12px 0">
 ${imp.length?`<div class="mute" style="margin-bottom:8px">${imp.length} item siap: ${imp.slice(0,3).map(x=>x.item).join(', ')}${imp.length>3?'…':''}</div><button onclick="doImp()" style="${bs}width:100%;border:0;background:var(--wine);color:#fff">Impor ${imp.length} item</button>`:''}</div>`}
+function exp(x){const L=(l,i,v,t='search',a='')=>`<div><label>${l}</label><input id="${i}" type="${t}" value="${String(v==null?'':v).replace(/"/g,'&quot;')}" ${a}></div>`;
+ if(editing===x.no)return`<div class="ex">${L('Nama item','e_i',x.item)}${L('Kategori','e_c',x.cat,'search','list="cl2"')}<datalist id="cl2">${[...new Set(items.map(y=>y.cat))].map(c=>`<option value="${c}">`).join('')}</datalist>
+ ${L('Qty','e_q',x.qty,'number')}${L('Harga satuan (Rp)','e_p',x.price,'number')}${L('Merk / catatan','e_n',x.notes)}${L('Link / tempat','e_l',x.link)}
+ <div style="grid-column:1/3"><label>Tanggal rencana / beli</label><input id="e_t" type="date" value="${x.tgl}"></div>
+ <button onclick="saveEdit(${x.no})" style="${bs}border:0;background:var(--wine);color:#fff">Simpan perubahan</button><button onclick="editing=null;draw()" style="${bs}border:1px solid var(--line);background:none">Batal</button></div>`;
+ return`<div class="ex"><div><label>Tanggal rencana / beli</label><input type="date" value="${x.tgl}" onchange="up(${x.no},'tgl',this.value)"></div>
+ <div><label>Realisasi (Rp)</label><input type="number" value="${x.real||''}" placeholder="${x.total}" onchange="up(${x.no},'real',+this.value)"></div>
+ <button onclick="editing=${x.no};draw()" style="${bs}border:1px solid var(--wine);background:none;color:var(--wine)">Edit</button><button onclick="del(${x.no})" style="${bs}border:1px solid var(--line);background:none;color:#a33">Hapus</button></div>`}
+function saveEdit(n){const x=items.find(i=>i.no===n),g=i=>$('#'+i).value.trim(),price=+g('e_p'),item=g('e_i');
+ if(!item||!price){toast('Isi nama item dan harga');return}
+ Object.assign(x,{item,cat:g('e_c')||'Lain-lain',qty:+g('e_q')||1,price,notes:g('e_n'),link:g('e_l'),tgl:g('e_t')});x.total=x.price*x.qty;editing=null;
+ localStorage[D]=JSON.stringify(items);
+ if(localStorage[K]){queue({action:'edit',no:n,item:x.item,cat:x.cat,qty:x.qty,price:x.price,notes:x.notes,link:x.link});queue({no:n,done:x.done,tgl:x.tgl,real:x.real})}
+ draw();toast('Perubahan disimpan')}
+function del(n){const x=items.find(i=>i.no===n);if(!confirm('Hapus "'+x.item+'" dari daftar?'))return;
+ items=items.filter(i=>i.no!==n);open=null;localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({action:'delete',no:n});draw();toast('Item dihapus')}
 function tg(n,v){const x=items.find(i=>i.no===n);x.done=v;if(v){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total}save(x);draw()}
 function up(n,k,v){const x=items.find(i=>i.no===n);x[k]=v;save(x);draw()}
 function donut(parts){const s=parts.reduce((a,p)=>a+p.v,0)||1;let o=0;const r=52,c=2*Math.PI*r;
@@ -112,10 +130,18 @@ function charts(t){const cats={};items.forEach(x=>{const c=cats[x.cat]=cats[x.ca
  <div class="card"><b>Progres belanja per kategori</b>${cl.map(c=>`<div style="margin-top:10px"><div class="row"><span>${c[0]}</span><span class="mute">${c[1].d}/${c[1].n} · ${c[1].b?(c[1].r/c[1].b*100).toFixed(0):0}% dari anggaran</span></div><div class="bar"><i style="width:${Math.min(100,c[1].r/c[1].b*100)}%"></i></div></div>`).join('')}</div>
  <div class="card"><b>Tren realisasi per bulan</b>${ml.length?`<div class="row" style="align-items:flex-end;height:130px;margin-top:10px">${ml.map(m=>`<div style="flex:1;text-align:center"><div class="mute" style="font-size:11px">${R(m[1]/1000)}rb</div><div style="background:var(--wine);height:${m[1]/mx*90}px;border-radius:4px 4px 0 0"></div><div class="mute">${m[0].slice(5)}/${m[0].slice(2,4)}</div></div>`).join('')}</div>`:'<p class="mute">Muncul setelah ada item yang dicentang dengan tanggal.</p>'}</div>`}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tab=b.dataset.t;draw()});
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.error('SW gagal:',e)));
+let dp=null;
+function showInst(t,f){if($('#ib'))return;const b=document.createElement('button');b.id='ib';b.innerHTML=t+' <span id="ibx" style="margin-left:10px;opacity:.7">✕</span>';
+ b.style.cssText='position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#8f1d21;color:#fff;padding:12px 22px;border:0;border-radius:30px;font:600 14px Figtree,sans-serif;box-shadow:0 4px 12px #0004;z-index:9999;white-space:nowrap';
+ b.onclick=ev=>{if(ev.target.id==='ibx'){rmInst();return}f()};document.body.appendChild(b)}
+function rmInst(){const b=$('#ib');if(b)b.remove()}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;showInst('⬇️ Install Aplikasi',async()=>{dp.prompt();await dp.userChoice;dp=null;rmInst()})});
+addEventListener('appinstalled',rmInst);
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!(matchMedia('(display-mode: standalone)').matches||navigator.standalone))showInst('⬇️ Cara pasang di iPhone',()=>alert('Buka lewat Safari, ketuk tombol Bagikan, lalu pilih "Tambah ke Layar Utama".'));
 const _p=new URLSearchParams(location.search).get('api');if(_p){localStorage[K]=_p;history.replaceState(null,'',location.pathname)}
 if(!localStorage[K]&&DEFAULT_URL)localStorage[K]=DEFAULT_URL;
 if(localStorage[D]){items=JSON.parse(localStorage[D]);draw()}
 sync();setInterval(()=>{if(!document.hidden)sync()},30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});addEventListener('online',sync);addEventListener('offline',stat);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});addEventListener('online',()=>{toast('Kembali online, menyinkronkan...');stat();sync()});addEventListener('offline',()=>{stat();toast('Mode offline, data disimpan lokal')});
 </script></body></html>
