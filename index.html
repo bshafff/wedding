@@ -24,8 +24,9 @@ input[type=search],input[type=date],input[type=number],input[type=url]{width:100
 .leg{display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0}.leg b{width:10px;height:10px;border-radius:3px}
 #st{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;display:none;z-index:9}
 .badge{display:inline-block;font-size:12px;padding:2px 9px;border-radius:10px;background:#ffffff30;margin-top:6px}
+.couple{font:italic 600 15px Fraunces,Georgia,serif;margin:3px 0 6px;opacity:.95}
 </style></head><body>
-<header><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()" style="margin-right:6px">Sync</button><h1>Seserahan Tracker</h1><small id="sub"></small><small id="sy"></small><div><span id="cn" class="badge"></span></div></header>
+<header><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()" style="margin-right:6px">Sync</button><h1>Seserahan Tracker</h1><div class="couple">Shaffan Burhan dan Annisa Istiqomah Sugandi</div><small id="sub"></small><small id="sy"></small><div><span id="cn" class="badge"></span></div></header>
 <div id="st"></div><main id="m"></main>
 <nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
 <script>
