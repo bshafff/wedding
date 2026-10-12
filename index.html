@@ -29,12 +29,16 @@ input[type=search],input[type=date],input[type=number],input[type=url]{width:100
 .mc{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
 .mc h3{margin:0;font-family:Fraunces,Georgia,serif;color:var(--wine);font-size:20px}.mc label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
 .mc hr{border:0;border-top:1px solid var(--line);margin:18px 0 4px}.mc .sec{font-size:11px;letter-spacing:.08em;color:var(--gold);font-weight:600;margin-top:12px}
+.pencil{border:0;background:none;font-size:17px;padding:6px 4px;cursor:pointer;line-height:1}
+.realbox{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.realbox .sec{font-size:11px;letter-spacing:.08em;color:var(--gold);font-weight:600;margin-bottom:6px}
+.realbox label{display:block;font-size:12px;color:var(--mute);margin:6px 0 3px}
 </style></head><body>
 <header><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()" style="margin-right:6px">Sync</button><h1>Seserahan Tracker</h1><div class="couple">Shaffan Burhan dan Annisa Istiqomah Sugandi</div><small id="sub"></small><small id="sy"></small><div><span id="cn" class="badge"></span></div></header>
 <div id="st"></div><main id="m"></main>
 <nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
 <script>
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwM0-QGhmM0yNqVwDSdd80H2-kSV3CDTi1Rs5iRU7rpF-3FXLneORFlr3Hud3jZ74mG/exec'; // dipakai tombol Sambung
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwKZvHWW3DUFx7Z3glhUXgQ-ZF1rNW_bpoICslLCWvEULcxspe2HvdbXsehsGzTE7Fh/exec'; // dipakai tombol Sambung
 const $=s=>document.querySelector(s),R=n=>'Rp'+Math.round(n).toLocaleString('id-ID'),K='sr_url',D='sr_data';
 const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
 let demoOn=false,editing=null,lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
@@ -88,9 +92,12 @@ function list(){let a=items.filter(x=>flt==='semua'||(flt==='belum')!==x.done).f
  <div style="grid-column:1/3"><label>Link / nama tempat</label><input id="a_l" type="search"></div>
  <div style="grid-column:1/3"><label>Tanggal rencana beli (opsional)</label><input id="a_t" type="date"></div>
  <button onclick="add()" style="grid-column:1/3;padding:12px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan item</button></div></div>`:'')+(importing?impPanel():'')+
- a.map(x=>`<div class="card ${x.done?'done':''}"><div class="it"><input type="checkbox" ${x.done?'checked':''} onchange="tg(${x.no},this.checked)">
+ a.map(x=>`<div class="card ${x.done?'done':''}"><div class="it">
+ <input type="checkbox" ${x.done?'checked':''} onchange="tg(${x.no},this.checked)">
  <div class="t" onclick="open=open===${x.no}?null:${x.no};draw()"><div class="nm"><b>${x.item}</b></div><div class="mute">${x.cat} · ${x.qty} ${x.unit||''} · ${R(x.total)}</div>
- <div class="tag">${x.tgl?(x.done?'Dibeli ':'Rencana ')+fd(x.tgl):'Belum ada tanggal'}</div>${x.notes?`<div class="mute">${x.notes}</div>`:''}${x.done&&(x.rbrand||x.real)?`<div class="mute" style="color:var(--sage)">Dibeli: ${x.rbrand||'-'} · ${R(x.real||x.total)}</div>`:''}</div></div>
+ <div class="tag">${x.tgl?(x.done?'Dibeli ':'Rencana ')+fd(x.tgl):'Belum ada tanggal'}</div>${x.notes?`<div class="mute">${x.notes}</div>`:''}${x.done&&(x.rbrand||x.real)?`<div class="mute" style="color:var(--sage)">Dibeli: ${x.rbrand||'-'} · ${R(x.real||x.total)}${(x.real||x.total)!==x.total?' <b>'+(x.real>x.total?'(+':'(–')+R(Math.abs((x.real||x.total)-x.total))+')</b>':''}</div>`:''}</div>
+ <button class="pencil" title="Edit item" onclick="event.stopPropagation();openEdit(${x.no})">✏️</button>
+ </div>
  ${open===x.no?exp(x):''}</div>`).join('')||'<p class="mute">Tidak ada item.</p>'}
 function addLocal(list){let n=Math.max(0,...items.map(x=>x.no));list.forEach(d=>items.push({no:++n,cat:d.cat,item:d.item,qty:d.qty,unit:d.unit||'pcs',price:d.price,total:d.price*d.qty,link:d.link,notes:d.notes,done:false,tgl:d.tgl||'',real:0}));localStorage[D]=JSON.stringify(items)}
 function commit(list){addLocal(list);if(localStorage[K])queue({action:'addMany',list});draw()}
@@ -114,36 +121,51 @@ function impPanel(){return`<div class="card"><b>Import dari CSV</b><p class="mut
 <input type="file" accept=".csv,.txt" onchange="rd(this.files[0])" style="display:block;margin:12px 0">
 ${imp.length?`<div class="mute" style="margin-bottom:8px">${imp.length} item siap: ${imp.slice(0,3).map(x=>x.item).join(', ')}${imp.length>3?'…':''}</div><button onclick="doImp()" style="${bs}width:100%;border:0;background:var(--wine);color:#fff">Impor ${imp.length} item</button>`:''}</div>`}
 function exp(x){const bt='padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;flex:1;background:none;';
+ const diff=(x.real||x.total)-x.total;
  return`<div style="margin-top:10px;font-size:13px">
  <div class="row"><span class="mute">Rencana</span><span>${R(x.total)}${x.notes?' · '+x.notes:''}</span></div>
  <div class="row"><span class="mute">Realisasi</span><span>${x.done?R(x.real||x.total)+' · '+(x.rbrand||'merk belum diisi'):'belum dibeli'}</span></div>
- ${x.done?`<div class="row"><span class="mute">Selisih</span><b style="color:${(x.real||x.total)>x.total?'var(--wine)':'var(--sage)'}">${(x.real||x.total)>x.total?'+':''}${R((x.real||x.total)-x.total)}</b></div>`:''}
+ ${x.done?`<div class="row"><span class="mute">Selisih</span><b style="color:${diff>0?'var(--wine)':'var(--sage)'}">${diff>0?'+':''}${R(diff)}</b></div>`:''}
  ${x.link?`<div class="row"><span class="mute">Beli di</span><span>${x.link}</span></div>`:''}</div>
- <div class="row" style="margin-top:12px;gap:8px"><button onclick="openEdit(${x.no})" style="${bt}border:1px solid var(--wine);color:var(--wine)">Edit</button><button onclick="del(${x.no})" style="${bt}border:1px solid var(--line);color:#a33">Hapus</button></div>`}
-function openEdit(n){const x=items.find(i=>i.no===n);if(!x)return;editing=n;
+ ${x.done?`<div class="realbox">
+   <div class="sec">REALISASI — ISI KALAU BEDA DARI RENCANA</div>
+   <label>Merk / barang yang dibeli</label>
+   <input type="search" value="${(x.rbrand||'').replace(/"/g,'&quot;')}" placeholder="${(x.item||'').replace(/"/g,'&quot;')}" onchange="up(${x.no},'rbrand',this.value)">
+   <label>Harga realisasi total (Rp)</label>
+   <input type="number" value="${x.real||''}" placeholder="${x.total}" onchange="up(${x.no},'real',+this.value||0)">
+   <div class="mute" style="margin-top:6px">Kosongkan harga kalau sama dengan rencana (${R(x.total)}).</div>
+ </div>`:''}
+ <div class="row" style="margin-top:12px;gap:8px"><button onclick="openEdit(${x.no})" style="${bt}border:1px solid var(--wine);color:var(--wine)">Edit lengkap</button><button onclick="del(${x.no})" style="${bt}border:1px solid var(--line);color:#a33">Hapus</button></div>`}
+function openEdit(n,scrollReal){const x=items.find(i=>i.no===n);if(!x)return;editing=n;
  const L=(l,i,v,t,a)=>`<label>${l}</label><input id="${i}" type="${t||'search'}" value="${String(v==null?'':v).replace(/"/g,'&quot;')}" ${a||''}>`;
  const m=document.createElement('div');m.id='md';m.onclick=ev=>{if(ev.target===m)closeEdit()};
  const b='padding:13px;border-radius:10px;font:600 15px Figtree,sans-serif;';
  m.innerHTML=`<div class="mc"><h3>Edit item</h3><div class="sec">RENCANA</div>
  ${L('Nama item','e_i',x.item)}${L('Kategori','e_c',x.cat,'search','list="cl2"')}<datalist id="cl2">${[...new Set(items.map(y=>y.cat))].map(c=>`<option value="${c}">`).join('')}</datalist>
- ${L('Qty','e_q',x.qty,'number')}${L('Harga satuan (Rp)','e_p',x.price,'number')}${L('Merk / catatan rencana','e_n',x.notes)}${L('Link / tempat beli (rencana)','e_l',x.link)}
+ <div class="ex"><div>${L('Qty','e_q',x.qty,'number')}</div><div>${L('Satuan','e_u',x.unit||'pcs')}</div></div>
+ ${L('Harga satuan (Rp)','e_p',x.price,'number')}${L('Merk / catatan rencana','e_n',x.notes)}${L('Link / tempat beli (rencana)','e_l',x.link)}
  <hr><div class="sec">REALISASI</div>
  <label style="display:flex;gap:10px;align-items:center;color:var(--ink);font-size:15px;margin-top:14px"><input id="e_d" type="checkbox" ${x.done?'checked':''} style="width:22px;height:22px;accent-color:var(--sage)">Sudah dibeli</label>
  ${L('Tanggal rencana / tanggal beli','e_t',x.tgl,'date')}${L('Harga realisasi total (Rp)','e_r',x.real||'','number','placeholder="'+x.total+'"')}${L('Merk / barang yang dibeli','e_b',x.rbrand||'','search','placeholder="Isi kalau beda dari rencana"')}
  <div class="grid" style="margin-top:20px"><button onclick="closeEdit()" style="${b}border:0;background:#eee;color:var(--ink)">Batal</button><button onclick="saveEdit(${n})" style="${b}border:0;background:var(--wine);color:#fff">Simpan Perubahan</button></div></div>`;
- document.body.appendChild(m)}
+ document.body.appendChild(m);
+ if(scrollReal){const el=$('#e_b');if(el){el.scrollIntoView({block:'center'});setTimeout(()=>el.focus(),150)}}}
 function closeEdit(){const m=$('#md');if(m)m.remove();editing=null}
 function saveEdit(n){const x=items.find(i=>i.no===n),g=i=>$('#'+i).value.trim(),price=+g('e_p'),item=g('e_i');
  if(!item||!price){toast('Isi nama item dan harga');return}
- Object.assign(x,{item,cat:g('e_c')||'Lain-lain',qty:+g('e_q')||1,price,notes:g('e_n'),link:g('e_l'),tgl:g('e_t'),done:$('#e_d').checked,real:+g('e_r')||0,rbrand:g('e_b')});
+ Object.assign(x,{item,cat:g('e_c')||'Lain-lain',qty:+g('e_q')||1,unit:g('e_u')||'pcs',price,notes:g('e_n'),link:g('e_l'),tgl:g('e_t'),done:$('#e_d').checked,real:+g('e_r')||0,rbrand:g('e_b')});
  x.total=x.price*x.qty;if(x.done){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total}
  closeEdit();localStorage[D]=JSON.stringify(items);
- if(localStorage[K]){queue({action:'edit',no:n,item:x.item,cat:x.cat,qty:x.qty,price:x.price,notes:x.notes,link:x.link});queue({no:n,done:x.done,tgl:x.tgl,real:x.real,rbrand:x.rbrand})}
+ if(localStorage[K]){queue({action:'edit',no:n,item:x.item,cat:x.cat,qty:x.qty,unit:x.unit,price:x.price,notes:x.notes,link:x.link});queue({no:n,done:x.done,tgl:x.tgl,real:x.real,rbrand:x.rbrand})}
  draw();toast('Perubahan disimpan')}
 function del(n){const x=items.find(i=>i.no===n);if(!confirm('Hapus "'+x.item+'" dari daftar?'))return;
  items=items.filter(i=>i.no!==n);open=null;localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({action:'delete',no:n});draw();toast('Item dihapus')}
-function tg(n,v){const x=items.find(i=>i.no===n);x.done=v;if(v){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total}save(x);draw()}
-function up(n,k,v){const x=items.find(i=>i.no===n);x[k]=v;save(x);draw()}
+function tg(n,v){const x=items.find(i=>i.no===n);x.done=v;
+ if(v){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total;save(x);open=n;draw();
+   // kalau realisasi belum diisi (merk kosong), langsung buka form supaya bisa isi kalau beda dari rencana
+   if(!x.rbrand){openEdit(n,true)}
+ } else {save(x);draw()}}
+function up(n,k,v){const x=items.find(i=>i.no===n);x[k]=v;if(k==='real'&&!v)x.real=0;save(x);draw();toast('Realisasi disimpan')}
 function donut(parts){const s=parts.reduce((a,p)=>a+p.v,0)||1;let o=0;const r=52,c=2*Math.PI*r;
  return`<svg viewBox="0 0 140 140" width="150"><g transform="rotate(-90 70 70)">${parts.map((p,i)=>{const l=p.v/s*c,e=`<circle cx="70" cy="70" r="${r}" fill="none" stroke="${COL[i%8]}" stroke-width="22" stroke-dasharray="${l} ${c-l}" stroke-dashoffset="${-o}"/>`;o+=l;return e}).join('')}</g></svg>`}
 function charts(t){const cats={};items.forEach(x=>{const c=cats[x.cat]=cats[x.cat]||{b:0,r:0,n:0,d:0};c.b+=x.total;c.n++;if(x.done){c.r+=x.real||x.total;c.d++}});
