@@ -34,7 +34,7 @@ input[type=search],input[type=date],input[type=number],input[type=url]{width:100
 .realbox .sec{font-size:11px;letter-spacing:.08em;color:var(--gold);font-weight:600;margin-bottom:6px}
 .realbox label{display:block;font-size:12px;color:var(--mute);margin:6px 0 3px}
 </style></head><body>
-<header><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()" style="margin-right:6px">Sync</button><h1>Seserahan Tracker</h1><div class="couple">Shaffan Burhan dan Annisa Istiqomah Sugandi</div><small id="sub"></small><small id="sy"></small><div><span id="cn" class="badge"></span></div></header>
+<header><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()" style="margin-right:6px">Sync</button><button onclick="manualUpdate()" style="margin-right:6px">🔄</button><h1>Seserahan Tracker</h1><div class="couple">Shaffan Burhan dan Annisa Istiqomah Sugandi</div><small id="sub"></small><small id="sy"></small><div><span id="cn" class="badge"></span></div></header>
 <div id="st"></div><main id="m"></main>
 <nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
 <script>
@@ -200,6 +200,44 @@ function charts(t){const cats={};items.forEach(x=>{const c=cats[x.cat]=cats[x.ca
  <div class="card"><b>Tren realisasi per bulan</b>${ml.length?`<div class="row" style="align-items:flex-end;height:130px;margin-top:10px">${ml.map(m=>`<div style="flex:1;text-align:center"><div class="mute" style="font-size:11px">${R(m[1]/1000)}rb</div><div style="background:var(--wine);height:${m[1]/mx*90}px;border-radius:4px 4px 0 0"></div><div class="mute">${m[0].slice(5)}/${m[0].slice(2,4)}</div></div>`).join('')}</div>`:'<p class="mute">Muncul setelah ada item yang dicentang dengan tanggal.</p>'}</div>`}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tab=b.dataset.t;draw()});
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.error('SW gagal:',e)));
+
+// ===== AUTO UPDATE =====
+async function checkUpdate(){
+  try{
+    const r=await fetch('./version.json?t='+Date.now(),{cache:'no-store'});
+    const j=await r.json();
+    const seen=localStorage.app_v;
+    if(!seen){ localStorage.app_v=j.v; return false; }
+    if(j.v!==seen){
+      console.log('Versi baru terdeteksi:',j.v,'(lama:',seen,')');
+      localStorage.app_v=j.v;
+      await hardReset();
+      return true;
+    }
+  }catch(e){ console.warn('Cek update gagal:',e); }
+  return false;
+}
+async function hardReset(){
+  try{
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs) await reg.unregister();
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
+  location.replace(location.pathname+'?fresh='+Date.now());
+}
+async function manualUpdate(){
+  toast('Memeriksa update...');
+  const had=await checkUpdate();
+  if(!had){
+    await hardReset();
+  }
+}
+
 let dp=null;
 function showInst(t,f){if($('#ib'))return;const b=document.createElement('button');b.id='ib';b.innerHTML=t+' <span id="ibx" style="margin-left:10px;opacity:.7">✕</span>';
  b.style.cssText='position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#8f1d21;color:#fff;padding:12px 22px;border:0;border-radius:30px;font:600 14px Figtree,sans-serif;box-shadow:0 4px 12px #0004;z-index:9999;white-space:nowrap';
@@ -210,6 +248,7 @@ addEventListener('appinstalled',rmInst);
 if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!(matchMedia('(display-mode: standalone)').matches||navigator.standalone))showInst('⬇️ Cara pasang di iPhone',()=>alert('Buka lewat Safari, ketuk tombol Bagikan, lalu pilih "Tambah ke Layar Utama".'));
 const _p=new URLSearchParams(location.search).get('api');if(_p){localStorage[K]=_p;history.replaceState(null,'',location.pathname)}
 if(localStorage[D]){items=JSON.parse(localStorage[D]);draw()}
+checkUpdate();
 sync();setInterval(()=>{if(!document.hidden)sync()},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});addEventListener('online',()=>{toast('Kembali online, menyinkronkan...');stat();sync()});addEventListener('offline',()=>{stat();toast('Mode offline, data disimpan lokal')});
 </script></body></html>
