@@ -38,7 +38,7 @@ input[type=search],input[type=date],input[type=number],input[type=url]{width:100
 <div id="st"></div><main id="m"></main>
 <nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
 <script>
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzKcnLwpjhvDJBuOLXXt68UO8zO-U9dNGIUWCaZ4Q4XsxTReymDKjabY9c5u48eRYA/exec'; // dipakai tombol Sambung
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyIncsn5kBQD0pSwmNKGCA5aVYgdMCuV1uonXteOzP4qGeOEokVC1Sztvh-MWXKr4_0/exec';
 const $=s=>document.querySelector(s),R=n=>'Rp'+Math.round(n).toLocaleString('id-ID'),K='sr_url',D='sr_data';
 const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
 let demoOn=false,editing=null,lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
@@ -65,7 +65,6 @@ async function flush(){
       try{
         const res=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(a[0])});
         const txt=await res.text();
-        // Apps Script sukses = balas "ok". Kalau bukan "ok", jangan hapus dari antrean.
         if(txt.trim()!=='ok'){
           console.warn('Server tidak balas ok:',res.status,txt.slice(0,200));
           toast('Server belum simpan, coba lagi nanti');
