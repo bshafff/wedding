@@ -1,6 +1,10 @@
-const C='seserahan-v2',F=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(F)))});
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
-e.respondWith(fetch(r).then(res=>{if(res.ok){const k=res.clone();caches.open(C).then(c=>c.put(r,k))}return res})
-.catch(()=>caches.match(r,{ignoreSearch:true}).then(m=>m||(r.mode==='navigate'?caches.match('./index.html'):Response.error()))))});
+// Seserahan Tracker SW v3: install tidak gagal walau satu file belum terunggah
+const CACHE_NAME='seserahan-v3';
+const urlsToCache=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+self.addEventListener('install',e=>{self.skipWaiting();
+ e.waitUntil(caches.open(CACHE_NAME).then(c=>Promise.allSettled(urlsToCache.map(u=>c.add(u).catch(err=>console.warn('Gagal cache:',u,err))))))});
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE_NAME).map(n=>caches.delete(n)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',e=>{const r=e.request,u=r.url;
+ if(r.method!=='GET'||new URL(u).origin!==location.origin)return; // Apps Script & Google Fonts tidak di-intercept
+ e.respondWith(fetch(r).then(res=>{if(res.status===200&&res.type==='basic'){const k=res.clone();caches.open(CACHE_NAME).then(c=>c.put(r,k))}return res})
+ .catch(()=>caches.match(r,{ignoreSearch:true}).then(m=>m||(r.mode==='navigate'?caches.match('./index.html'):new Response('Offline',{status:503})))))});
