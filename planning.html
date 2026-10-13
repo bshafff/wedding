@@ -6,9 +6,12 @@
 <link rel="stylesheet" href="style.css">
 </head><body>
 <header>
-  <div class="hbtns"><button onclick="editInfo()">Edit</button><button onclick="resetPlan()">Reset</button></div>
+  <div class="hbtns">
+    <button onclick="editInfo()">Edit Info</button>
+    <button onclick="resetPlan()">Reset</button>
+  </div>
   <h1>Wedding Planning</h1>
-  <div class="couple" id="couple">Pramono & Anggi</div>
+  <div class="couple" id="couple">—</div>
   <small id="info"></small>
 </header>
 <div id="st"></div>
@@ -17,87 +20,221 @@
 <script src="app.js"></script>
 <script>
 renderNav('planning');
+
 const PK='sr_plan';
 const PLAN_DEFAULT={
   info:{couple:'Pramono & Anggi', date:'2026-08-17', location:'Rumah CPW & Hotel Arus'},
   sections:[
-    {t:'H-12 bulan', tasks:[
-      {id:'a1',cat:'Persiapan',title:'Diskusi & Perencanaan Awal'},
-      {id:'a2',cat:'Budgeting',title:'Menyusun anggaran pernikahan'},
-      {id:'a3',cat:'Budgeting',title:'Compare semua vendor'}
+    {id:'s1', label:'H-12 bulan', tasks:[
+      {id:'t1', cat:'Persiapan', title:'Diskusi & Perencanaan Awal', done:false},
+      {id:'t2', cat:'Budgeting', title:'Menyusun anggaran pernikahan', done:false},
+      {id:'t3', cat:'Budgeting', title:'Compare semua vendor', done:false}
     ]},
-    {t:'H-10 bulan', tasks:[
-      {id:'b1',cat:'Lamaran',title:'Persiapan acara lamaran'},
-      {id:'b2',cat:'Vendor',title:'Booking vendor'}
+    {id:'s2', label:'H-10 bulan', tasks:[
+      {id:'t4', cat:'Lamaran', title:'Persiapan acara lamaran', done:false},
+      {id:'t5', cat:'Vendor', title:'Booking vendor', done:false}
     ]},
-    {t:'H-8 bulan', tasks:[
-      {id:'c1',cat:'Lamaran',title:'Acara lamaran'},
-      {id:'c2',cat:'Vendor',title:'List dan contact vendor'},
-      {id:'c3',cat:'Dokumen',title:'Mengurus dokumen pernikahan (KTP, KK, akta, dll)'}
+    {id:'s3', label:'H-8 bulan', tasks:[
+      {id:'t6', cat:'Lamaran', title:'Acara lamaran', done:false},
+      {id:'t7', cat:'Vendor', title:'List dan contact vendor', done:false},
+      {id:'t8', cat:'Dokumen', title:'Mengurus dokumen pernikahan (KTP, KK, akta, dll)', done:false}
     ]},
-    {t:'H-6 bulan', tasks:[
-      {id:'d1',cat:'Vendor',title:'Menentukan pilihan vendor'},
-      {id:'d2',cat:'Undangan',title:'Desain & cetak undangan'},
-      {id:'d3',cat:'Entertainment',title:'Booking entertainment & souvenir'},
-      {id:'d4',cat:'Dokumentasi',title:'Booking foto/video'},
-      {id:'d5',cat:'Prewedding',title:'Prewedding, seserahan & MUA'},
-      {id:'d6',cat:'Fitting',title:'Fitting baju & food tasting'},
-      {id:'d7',cat:'Cincin',title:'Cincin'},
-      {id:'d8',cat:'Mahar',title:'Mahar'},
-      {id:'d9',cat:'Seserahan',title:'Seserahan'},
-      {id:'d10',cat:'Admin',title:'Administrasi'},
-      {id:'d11',cat:'Final',title:'Finalisasi & kirim undangan'}
+    {id:'s4', label:'H-6 bulan', tasks:[
+      {id:'t9', cat:'Vendor', title:'Menentukan pilihan vendor', done:false},
+      {id:'t10', cat:'Undangan', title:'Desain & cetak undangan', done:false},
+      {id:'t11', cat:'Entertainment', title:'Booking entertainment & souvenir', done:false},
+      {id:'t12', cat:'Dokumentasi', title:'Booking foto/video', done:false},
+      {id:'t13', cat:'Prewedding', title:'Prewedding, seserahan & MUA', done:false},
+      {id:'t14', cat:'Fitting', title:'Fitting baju & food tasting', done:false},
+      {id:'t15', cat:'Cincin', title:'Cincin', done:false},
+      {id:'t16', cat:'Mahar', title:'Mahar', done:false},
+      {id:'t17', cat:'Seserahan', title:'Seserahan', done:false},
+      {id:'t18', cat:'Admin', title:'Administrasi', done:false},
+      {id:'t19', cat:'Final', title:'Finalisasi & kirim undangan', done:false}
     ]},
-    {t:'H-4 bulan', tasks:[
-      {id:'e1',cat:'Diri',title:'Menyiapkan diri & kesehatan'}
+    {id:'s5', label:'H-4 bulan', tasks:[
+      {id:'t20', cat:'Diri', title:'Menyiapkan diri & kesehatan', done:false}
     ]},
-    {t:'H-3 bulan', tasks:[
-      {id:'f1',cat:'Diri',title:'Persiapan akhir & gladi resik'}
+    {id:'s6', label:'H-3 bulan', tasks:[
+      {id:'t21', cat:'Diri', title:'Persiapan akhir & gladi resik', done:false}
     ]}
   ]
 };
+
+function uid(){return Math.random().toString(36).slice(2,9)}
+function esc(s){return String(s==null?'':s).replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+
 function loadPlan(){
-  try{ return JSON.parse(localStorage[PK]||'null') || JSON.parse(JSON.stringify(PLAN_DEFAULT)); }
-  catch(e){ return JSON.parse(JSON.stringify(PLAN_DEFAULT)); }
+  try{
+    const j=JSON.parse(localStorage[PK]||'null');
+    if(!j||!Array.isArray(j.sections)) throw 0;
+    j.info=j.info||{couple:'',date:'',location:''};
+    j.sections.forEach(s=>{
+      if(!s.id) s.id=uid();
+      if(!Array.isArray(s.tasks)) s.tasks=[];
+      if(!s.label) s.label='H-…';
+      s.tasks.forEach(t=>{ if(!t.id) t.id=uid(); if(typeof t.done!=='boolean') t.done=false; });
+    });
+    return j;
+  }catch(e){ return JSON.parse(JSON.stringify(PLAN_DEFAULT)); }
 }
 function savePlan(p){ localStorage[PK]=JSON.stringify(p); drawPage(); }
-function resetPlan(){ if(!confirm('Reset semua checklist?'))return; localStorage.removeItem(PK); drawPage(); toast('Checklist direset'); }
+
+/* ---------- INFO ---------- */
 function editInfo(){
   const p=loadPlan();
   const c=prompt('Nama pasangan:',p.info.couple); if(c===null)return;
   const d=prompt('Tanggal (yyyy-mm-dd):',p.info.date); if(d===null)return;
   const l=prompt('Lokasi:',p.info.location); if(l===null)return;
-  p.info={couple:c||p.info.couple,date:d||p.info.date,location:l||p.info.location};
-  savePlan(p);
+  p.info={couple:c||p.info.couple, date:d||p.info.date, location:l||p.info.location};
+  savePlan(p); toast('Info disimpan');
 }
-function toggleTask(id){
+function resetPlan(){
+  if(!confirm('Reset semua checklist ke contoh default? Data yang kamu buat akan hilang.'))return;
+  localStorage.removeItem(PK); drawPage(); toast('Checklist direset');
+}
+
+/* ---------- SECTION ---------- */
+function addSection(){
+  const l=prompt('Nama bagian (contoh: H-12 bulan, H-1 minggu, Hari-H):','H-1 bulan');
+  if(!l)return;
   const p=loadPlan();
-  for(const s of p.sections) for(const t of s.tasks) if(t.id===id) t.done=!t.done;
+  p.sections.push({id:uid(), label:l.trim(), tasks:[]});
+  savePlan(p); toast('Bagian ditambahkan');
+}
+function editSection(secId){
+  const p=loadPlan();
+  const s=p.sections.find(x=>x.id===secId); if(!s)return;
+  const l=prompt('Nama bagian:',s.label);
+  if(l===null)return;
+  s.label=l.trim()||s.label;
   savePlan(p);
 }
+function delSection(secId){
+  const p=loadPlan();
+  const s=p.sections.find(x=>x.id===secId); if(!s)return;
+  if(!confirm('Hapus bagian "'+s.label+'" beserta '+s.tasks.length+' tugas di dalamnya?'))return;
+  p.sections=p.sections.filter(x=>x.id!==secId);
+  savePlan(p); toast('Bagian dihapus');
+}
+function moveSection(secId,dir){
+  const p=loadPlan();
+  const i=p.sections.findIndex(x=>x.id===secId); if(i<0)return;
+  const j=i+dir; if(j<0||j>=p.sections.length)return;
+  const a=p.sections.slice();
+  [a[i],a[j]]=[a[j],a[i]];
+  p.sections=a;
+  savePlan(p);
+}
+
+/* ---------- TASK ---------- */
+function toggleTask(secId,taskId){
+  const p=loadPlan();
+  const s=p.sections.find(x=>x.id===secId); if(!s)return;
+  const t=s.tasks.find(x=>x.id===taskId); if(!t)return;
+  t.done=!t.done;
+  savePlan(p);
+}
+function delTask(secId,taskId){
+  if(!confirm('Hapus tugas ini?'))return;
+  const p=loadPlan();
+  const s=p.sections.find(x=>x.id===secId); if(!s)return;
+  s.tasks=s.tasks.filter(x=>x.id!==taskId);
+  savePlan(p); toast('Tugas dihapus');
+}
+function openTaskModal(secId,taskId){
+  const p=loadPlan();
+  const sec=p.sections.find(s=>s.id===secId); if(!sec)return;
+  const isNew=!taskId;
+  const t=isNew ? {cat:'',title:''} : (sec.tasks.find(x=>x.id===taskId)||{cat:'',title:''});
+  const m=document.createElement('div'); m.id='md';
+  m.onclick=ev=>{ if(ev.target===m) m.remove(); };
+  m.innerHTML=
+    '<div class="mc">'+
+      '<h3>'+(isNew?'Tambah tugas':'Edit tugas')+'</h3>'+
+      '<div class="sec">BAGIAN: '+esc(sec.label)+'</div>'+
+      '<label>Kategori (opsional)</label>'+
+      '<input id="tk_c" type="text" value="'+esc(t.cat)+'" placeholder="Contoh: Vendor, Undangan, Dokumen">'+
+      '<label>Nama tugas</label>'+
+      '<input id="tk_t" type="text" value="'+esc(t.title)+'" placeholder="Contoh: Booking catering">'+
+      '<div class="grid" style="margin-top:20px">'+
+        '<button onclick="document.getElementById(\'md\').remove()" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button>'+
+        '<button onclick="saveTaskModal(\''+secId+'\',\''+(taskId||'')+'\')" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(m);
+  setTimeout(()=>{ const e=document.getElementById('tk_t'); if(e) e.focus(); }, 100);
+}
+function saveTaskModal(secId,taskId){
+  const p=loadPlan();
+  const sec=p.sections.find(s=>s.id===secId); if(!sec)return;
+  const cat=document.getElementById('tk_c').value.trim();
+  const title=document.getElementById('tk_t').value.trim();
+  if(!title){ toast('Isi nama tugas'); return; }
+  if(taskId){
+    const t=sec.tasks.find(x=>x.id===taskId);
+    if(t){ t.cat=cat; t.title=title; }
+  } else {
+    sec.tasks.push({id:uid(), cat, title, done:false});
+  }
+  document.getElementById('md').remove();
+  savePlan(p); toast('Tersimpan');
+}
+
+/* ---------- RENDER ---------- */
 window.drawPage=function(){
   const p=loadPlan();
-  $('#couple').textContent=p.info.couple||'';
+  document.getElementById('couple').textContent=p.info.couple||'';
   const fd=s=>s?new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
-  $('#info').textContent=fd(p.info.date)+' · '+(p.info.location||'-');
+  document.getElementById('info').textContent=(p.info.date?fd(p.info.date):'')+(p.info.location?' · '+p.info.location:'');
+
   const all=p.sections.flatMap(s=>s.tasks);
   const done=all.filter(t=>t.done).length;
   const pct=all.length?done/all.length*100:0;
-  $('#m').innerHTML=`
-    <div class="card">
-      <div class="row"><b>Progres persiapan</b><span class="mute">${done}/${all.length}</span></div>
-      <div class="bar"><i style="width:${pct}%"></i></div>
-      <div class="mute">${pct.toFixed(0)}% selesai</div>
-    </div>
-    ${p.sections.map(s=>{
-      const sd=s.tasks.filter(t=>t.done).length;
-      return`<div class="plan-sec"><h3>${s.t} <span class="mute" style="font-size:12px;font-weight:400">· ${sd}/${s.tasks.length}</span></h3>
-      ${s.tasks.map(t=>`<div class="plan-task ${t.done?'done':''}">
-        <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}')">
-        <div class="t"><div class="cat">${t.cat}</div><span>${t.title}</span></div>
-      </div>`).join('')}</div>`;
-    }).join('')}
-    <div class="mute" style="text-align:center;margin-top:14px">Data checklist tersimpan lokal di HP ini.</div>`;
+
+  let html='';
+  html+='<div class="card">'+
+    '<div class="row"><b>Progres persiapan</b><span class="mute">'+done+'/'+all.length+'</span></div>'+
+    '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+    '<div class="mute">'+pct.toFixed(0)+'% selesai</div>'+
+  '</div>';
+
+  html+='<button onclick="addSection()" style="padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;width:100%;border:1px dashed var(--wine);background:none;color:var(--wine);margin-bottom:12px">+ Tambah bagian (H-…)</button>';
+
+  if(!p.sections.length){
+    html+='<p class="mute" style="text-align:center">Belum ada bagian. Ketuk tombol di atas untuk mulai.</p>';
+  }
+
+  p.sections.forEach((s,idx)=>{
+    const sd=s.tasks.filter(t=>t.done).length;
+    html+='<div class="plan-sec" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px">';
+    html+='<div class="row" style="margin-bottom:8px;align-items:flex-start">';
+    html+='<h3 style="margin:0;font-family:Fraunces,Georgia,serif;color:var(--wine);font-size:17px;flex:1">'+esc(s.label)+' <span class="mute" style="font-size:12px;font-weight:400">· '+sd+'/'+s.tasks.length+'</span></h3>';
+    html+='</div>';
+    html+='<div class="row" style="gap:6px;justify-content:flex-end;margin-bottom:8px">';
+    if(idx>0) html+='<button onclick="moveSection(\''+s.id+'\',-1)" title="Naik" style="padding:4px 10px;border:1px solid var(--line);background:none;border-radius:8px;font-size:13px">▲</button>';
+    if(idx<p.sections.length-1) html+='<button onclick="moveSection(\''+s.id+'\',1)" title="Turun" style="padding:4px 10px;border:1px solid var(--line);background:none;border-radius:8px;font-size:13px">▼</button>';
+    html+='<button onclick="editSection(\''+s.id+'\')" style="padding:4px 10px;border:1px solid var(--wine);background:none;color:var(--wine);border-radius:8px;font-size:13px">✏️ Nama</button>';
+    html+='<button onclick="delSection(\''+s.id+'\')" style="padding:4px 10px;border:1px solid var(--line);background:none;color:#a33;border-radius:8px;font-size:13px">🗑️</button>';
+    html+='</div>';
+
+    if(!s.tasks.length){
+      html+='<p class="mute" style="margin:6px 0">Belum ada tugas.</p>';
+    }
+    s.tasks.forEach(t=>{
+      html+='<div class="plan-task '+(t.done?'done':'')+'">'+
+        '<input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTask(\''+s.id+'\',\''+t.id+'\')">'+
+        '<div class="t">'+(t.cat?'<div class="cat">'+esc(t.cat)+'</div>':'')+'<span>'+esc(t.title)+'</span></div>'+
+        '<button class="pencil" title="Edit" onclick="openTaskModal(\''+s.id+'\',\''+t.id+'\')">✏️</button>'+
+        '<button class="pencil" title="Hapus" onclick="delTask(\''+s.id+'\',\''+t.id+'\')" style="color:#a33">🗑️</button>'+
+      '</div>';
+    });
+    html+='<button onclick="openTaskModal(\''+s.id+'\')" style="margin-top:6px;padding:9px 12px;border:1px dashed var(--line);background:none;border-radius:8px;font:600 13px Figtree,sans-serif;color:var(--wine);width:100%">+ Tambah tugas</button>';
+    html+='</div>';
+  });
+
+  html+='<div class="mute" style="text-align:center;margin-top:14px">Checklist tersimpan lokal di HP ini.</div>';
+  document.getElementById('m').innerHTML=html;
 };
 </script>
 </body></html>
