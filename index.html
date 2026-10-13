@@ -3,262 +3,51 @@
 <meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Seserahan">
 <title>Seserahan Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#faf6f2;--card:#fff;--ink:#2a1618;--mute:#7a6a66;--wine:#8f1d21;--gold:#b8893b;--sage:#5f7f62;--line:#eadfd8}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Figtree,system-ui,sans-serif;padding-bottom:76px}
-h1,.num{font-family:Fraunces,Georgia,serif;font-weight:600}
-header{background:var(--wine);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px}
-header h1{margin:0;font-size:22px}header small{opacity:.8}
-header button{float:right;background:none;border:1px solid #fff6;color:#fff;border-radius:8px;padding:4px 10px}
-main{padding:14px;max-width:640px;margin:auto}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
-.big{font-size:34px;color:var(--wine);line-height:1}.row{display:flex;gap:10px;justify-content:space-between;align-items:center}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mute{color:var(--mute);font-size:13px}
-.bar{height:9px;background:var(--line);border-radius:5px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--sage)}
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;padding:14px 0;border:0;background:none;font:600 14px Figtree,sans-serif;color:var(--mute)}nav button.on{color:var(--wine);box-shadow:inset 0 3px var(--wine)}
-.chips{display:flex;gap:8px;margin-bottom:10px}.chips button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 14px;font:inherit}.chips .on{background:var(--wine);color:#fff;border-color:var(--wine)}
-input[type=search],input[type=date],input[type=number],input[type=url]{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
-.it{display:flex;gap:12px;align-items:flex-start}.it input[type=checkbox]{width:22px;height:22px;accent-color:var(--sage);margin-top:2px}
-.it .t{flex:1}.done .nm{text-decoration:line-through;color:var(--mute)}.tag{font-size:12px;color:var(--gold);font-weight:600}
-.ex{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.ex label{font-size:12px;color:var(--mute)}
-.leg{display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0}.leg b{width:10px;height:10px;border-radius:3px}
-#st{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;display:none;z-index:9}
-.badge{display:inline-block;font-size:12px;padding:2px 9px;border-radius:10px;background:#ffffff30;margin-top:6px}
-.couple{font:italic 600 15px Fraunces,Georgia,serif;margin:3px 0 6px;opacity:.95}
-#md{position:fixed;inset:0;background:#0007;z-index:10000;display:flex;align-items:flex-end;justify-content:center}
-.mc{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
-.mc h3{margin:0;font-family:Fraunces,Georgia,serif;color:var(--wine);font-size:20px}.mc label{display:block;font-size:13px;color:var(--mute);margin:12px 0 4px}
-.mc hr{border:0;border-top:1px solid var(--line);margin:18px 0 4px}.mc .sec{font-size:11px;letter-spacing:.08em;color:var(--gold);font-weight:600;margin-top:12px}
-.pencil{border:0;background:none;font-size:17px;padding:6px 4px;cursor:pointer;line-height:1}
-.realbox{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
-.realbox .sec{font-size:11px;letter-spacing:.08em;color:var(--gold);font-weight:600;margin-bottom:6px}
-.realbox label{display:block;font-size:12px;color:var(--mute);margin:6px 0 3px}
-</style></head><body>
-<header><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()" style="margin-right:6px">Sync</button><button onclick="manualUpdate()" style="margin-right:6px">🔄</button><h1>Seserahan Tracker</h1><div class="couple">Shaffan Burhan dan Annisa Istiqomah Sugandi</div><small id="sub"></small><small id="sy"></small><div><span id="cn" class="badge"></span></div></header>
-<div id="st"></div><main id="m"></main>
-<nav><button data-t="s" class="on">Ringkasan</button><button data-t="l">Daftar</button><button data-t="g">Grafik</button></nav>
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header>
+  <div class="hbtns"><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()">Sync</button><button onclick="manualUpdate()">🔄</button></div>
+  <h1>Seserahan Tracker</h1>
+  <div class="couple">Shaffan Burhan dan Annisa Istiqomah Sugandi</div>
+  <small id="sub"></small><small id="sy"></small>
+  <div><span id="cn" class="badge"></span></div>
+</header>
+<div id="st"></div>
+<main id="m"></main>
+<nav></nav>
+<script src="app.js"></script>
 <script>
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyIncsn5kBQD0pSwmNKGCA5aVYgdMCuV1uonXteOzP4qGeOEokVC1Sztvh-MWXKr4_0/exec';
-const $=s=>document.querySelector(s),R=n=>'Rp'+Math.round(n).toLocaleString('id-ID'),K='sr_url',D='sr_data';
-const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
-let demoOn=false,editing=null,lastSync='',importing=false,imp=[],adding=false,items=[],tab='s',flt='belum',q='',open=null,demo=false;
-const SAMPLE=[['Alat shalat','Mukena',250000],['Alat shalat','Sajadah couple',200000],['Toileteries','Set haircare',280000],['Skincare','Sunscreen',70000],['Makeup','Foundation',140000],['Makeup','Lipcream',70000]].map((x,i)=>({no:i+1,cat:x[0],item:x[1],qty:1,unit:'pcs',price:x[2],total:x[2],notes:'',done:i<2,tgl:i<2?'2026-09-20':'',real:i<2?x[2]:0}));
-function toast(t,ms){const e=$('#st');e.textContent=t;e.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(()=>e.style.display='none',ms||1800)}
-async function load(){const u=localStorage[K];
- if(!u){demo=true;items=localStorage[D]?JSON.parse(localStorage[D]):SAMPLE;draw();return}
- demo=false;if(q_().length){stat();return}
- try{items=await(await fetch(u)).json();localStorage[D]=JSON.stringify(items);lastSync=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
- catch(e){if(!items.length)items=JSON.parse(localStorage[D]||'[]');toast('Offline, memakai data terakhir')}
- if((!document.activeElement||!document.activeElement.matches('input'))&&editing===null&&!adding&&!importing)draw();else stat()}
-async function sync(){await flush();if(!q_().length)await load()}
-function q_(){return JSON.parse(localStorage.sr_q||'[]')}
-function setq(a){localStorage.sr_q=JSON.stringify(a);stat()}
-let busy=false;
-async function flush(){
-  const u=localStorage[K];
-  if(!u||busy||!navigator.onLine)return;
-  busy=true;
-  try{
-    while(true){
-      const a=q_();
-      if(!a.length)break;
-      try{
-        const res=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(a[0])});
-        const txt=await res.text();
-        if(txt.trim()!=='ok'){
-          console.warn('Server tidak balas ok:',res.status,txt.slice(0,200));
-          toast('Server belum simpan, coba lagi nanti');
-          break;
-        }
-        const cur=q_();cur.shift();setq(cur);
-      }catch(e){
-        console.warn('Kirim gagal:',e);
-        toast('Belum tersambung, perubahan menunggu');
-        break;
-      }
-    }
-  } finally { busy=false }
-}
-function queue(p){
-  const a=q_();a.push(p);setq(a);
-  flush().then(()=>{ if(!q_().length) load() });
-}
-function stat(){const n=q_().length,e=$('#sy'),c=$('#cn');if(!e)return;
- c.textContent=navigator.onLine?'🟢 Online':'🔴 Offline · data tersimpan lokal';
- e.textContent=!localStorage[K]?'':n?' · '+n+' perubahan menunggu sinkron':lastSync?' · tersinkron '+lastSync+' · auto-sync aktif':''}
-function welcome(){return`<div class="card" style="text-align:center;padding:30px 18px"><div class="num" style="font-size:24px;color:var(--wine)">Sambungkan ke Google Sheet</div>
-<p class="mute" style="margin:10px 0 20px">Ketuk sekali untuk memuat daftar seserahan dan menyinkronkan semua perubahan.</p>
-<button onclick="connect()" style="padding:14px 40px;border:0;border-radius:30px;background:var(--wine);color:#fff;font:600 16px Figtree,sans-serif">Sambung</button>
-<p style="margin-top:18px"><a href="#" class="mute" onclick="demoOn=true;load();return false">Coba mode demo dulu</a></p></div>`}
-function connect(){localStorage[K]=DEFAULT_URL;delete localStorage[D];items=[];toast('Menyambungkan...');sync()}
-function cfg(){const v=prompt('Tempel URL Web App Apps Script (…/exec). Kosongkan untuk mode demo:',localStorage[K]||'');
- if(v===null)return;v?localStorage[K]=v.trim():localStorage.removeItem(K);delete localStorage[D];load()}
-function save(it){localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({no:it.no,done:it.done,tgl:it.tgl,real:it.real,rbrand:it.rbrand||''})}
-function tot(){const b=items.reduce((a,x)=>a+x.total,0),d=items.filter(x=>x.done),r=d.reduce((a,x)=>a+(x.real||x.total),0),bd=d.reduce((a,x)=>a+x.total,0);
- return{b,n:items.length,dn:d.length,r,bd,sisa:b-bd,pct:items.length?d.length/items.length*100:0}}
-function draw(){stat();if(!localStorage[K]&&DEFAULT_URL&&!demoOn){$('#sub').textContent='Belum tersambung';$('#m').innerHTML=welcome();return}const t=tot();$('#sub').textContent=(demo?'Mode demo · ':'')+t.dn+' dari '+t.n+' item sudah dibeli';
- $('#m').innerHTML=tab==='s'?sum(t):tab==='l'?list():charts(t)}
-function sum(t){const nx=items.filter(x=>!x.done&&x.tgl).sort((a,b)=>a.tgl.localeCompare(b.tgl)).slice(0,4);const sel=t.r-t.bd;
- return`<div class="card"><div class="mute">Total realisasi</div><div class="num big">${R(t.r)}</div>
- <div class="bar"><i style="width:${t.pct}%"></i></div><div class="mute">${t.pct.toFixed(0)}% item terbeli · anggaran ${R(t.b)}</div></div>
- <div class="grid"><div class="card"><div class="mute">Belum dibeli</div><div class="num" style="font-size:22px">${R(t.sisa)}</div><div class="mute">${t.n-t.dn} item</div></div>
- <div class="card"><div class="mute">Selisih vs anggaran</div><div class="num" style="font-size:22px;color:${sel>0?'var(--wine)':'var(--sage)'}">${sel>0?'+':''}${R(sel)}</div><div class="mute">${sel>0?'lebih mahal':'lebih hemat'}</div></div></div>
- <div class="card"><b>Jadwal beli terdekat</b>${nx.length?nx.map(x=>`<div class="row" style="margin-top:8px"><span>${x.item}</span><span class="tag">${fd(x.tgl)}</span></div>`).join(''):'<p class="mute">Belum ada tanggal rencana. Buka Daftar, pilih item, isi tanggalnya.</p>'}</div>`}
-const fd=s=>new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
-function list(){let a=items.filter(x=>flt==='semua'||(flt==='belum')!==x.done).filter(x=>(x.item+x.cat+x.notes).toLowerCase().includes(q));
- if(flt==='belum')a.sort((x,y)=>(x.tgl||'9').localeCompare(y.tgl||'9'));
- return`<div class="chips">${['belum','sudah','semua'].map(f=>`<button class="${f===flt?'on':''}" onclick="flt='${f}';draw()">${f[0].toUpperCase()+f.slice(1)}</button>`).join('')}</div>
- <input type="search" placeholder="Cari item atau kategori" value="${q}" oninput="q=this.value.toLowerCase();draw();this.focus()" style="margin-bottom:10px">
- <div class="row" style="margin-bottom:12px"><button onclick="adding=!adding;importing=false;draw()" style="${bs}flex:1;border:1px dashed var(--wine);background:none;color:var(--wine)">${adding?'Batal':'+ Tambah item'}</button><button onclick="importing=!importing;adding=false;draw()" style="${bs}flex:1;border:1px dashed var(--wine);background:none;color:var(--wine)">${importing?'Batal':'Import CSV'}</button></div>`+(adding?`<div class="card"><div class="ex" style="margin:0">
- <div style="grid-column:1/3"><label>Nama item</label><input id="a_i" type="search"></div>
- <div><label>Kategori</label><input id="a_c" type="search" list="cl" placeholder="Makeup, Skincare…"><datalist id="cl">${[...new Set(items.map(x=>x.cat))].map(c=>`<option value="${c}">`).join('')}</datalist></div>
- <div><label>Merk / catatan</label><input id="a_n" type="search"></div>
- <div><label>Qty</label><input id="a_q" type="number" value="1"></div><div><label>Harga satuan (Rp)</label><input id="a_p" type="number"></div>
- <div style="grid-column:1/3"><label>Link / nama tempat</label><input id="a_l" type="search"></div>
- <div style="grid-column:1/3"><label>Tanggal rencana beli (opsional)</label><input id="a_t" type="date"></div>
- <button onclick="add()" style="grid-column:1/3;padding:12px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan item</button></div></div>`:'')+(importing?impPanel():'')+
- a.map(x=>`<div class="card ${x.done?'done':''}"><div class="it">
- <input type="checkbox" ${x.done?'checked':''} onchange="tg(${x.no},this.checked)">
- <div class="t" onclick="open=open===${x.no}?null:${x.no};draw()"><div class="nm"><b>${x.item}</b></div><div class="mute">${x.cat} · ${x.qty} ${x.unit||''} · ${R(x.total)}</div>
- <div class="tag">${x.tgl?(x.done?'Dibeli ':'Rencana ')+fd(x.tgl):'Belum ada tanggal'}</div>${x.notes?`<div class="mute">${x.notes}</div>`:''}${x.done&&(x.rbrand||x.real)?`<div class="mute" style="color:var(--sage)">Dibeli: ${x.rbrand||'-'} · ${R(x.real||x.total)}${(x.real||x.total)!==x.total?' <b>'+(x.real>x.total?'(+':'(–')+R(Math.abs((x.real||x.total)-x.total))+')</b>':''}</div>`:''}</div>
- <button class="pencil" title="Edit item" onclick="event.stopPropagation();openEdit(${x.no})">✏️</button>
- </div>
- ${open===x.no?exp(x):''}</div>`).join('')||'<p class="mute">Tidak ada item.</p>'}
-function addLocal(list){let n=Math.max(0,...items.map(x=>x.no));list.forEach(d=>items.push({no:++n,cat:d.cat,item:d.item,qty:d.qty,unit:d.unit||'pcs',price:d.price,total:d.price*d.qty,link:d.link,notes:d.notes,done:false,tgl:d.tgl||'',real:0}));localStorage[D]=JSON.stringify(items)}
-function commit(list){addLocal(list);if(localStorage[K])queue({action:'addMany',list});draw()}
-function add(){const g=i=>$('#'+i).value.trim(),item=g('a_i'),price=+g('a_p'),qty=+g('a_q')||1;
- if(!item||!price){toast('Isi nama item dan harga');return}
- adding=false;commit([{item,cat:g('a_c')||'Lain-lain',qty,unit:'pcs',price,link:g('a_l'),notes:g('a_n'),tgl:g('a_t')}]);toast('Item ditambahkan')}
-function parse(t){t=t.replace(/^\uFEFF/,'');const h=t.split('\n')[0],sep=(h.match(/;/g)||[]).length>(h.match(/,/g)||[]).length?';':',';
- const rows=[];let r=[],c='',qt=false;
- for(let i=0;i<t.length;i++){const ch=t[i];
-  if(qt){if(ch=='"'&&t[i+1]=='"'){c+='"';i++}else if(ch=='"')qt=false;else c+=ch}
-  else if(ch=='"')qt=true;else if(ch==sep){r.push(c);c=''}else if(ch=='\n'){r.push(c);rows.push(r);r=[];c=''}else if(ch!='\r')c+=ch}
- if(c||r.length){r.push(c);rows.push(r)}return rows}
-const num=x=>+String(x||'').replace(/[^\d]/g,'')||0,pad=n=>String(n).padStart(2,'0');
-function dt(x){x=(x||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(x))return x;const m=x.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);return m?m[3]+'-'+pad(m[2])+'-'+pad(m[1]):''}
-function rd(f){if(!f)return;f.text().then(t=>{imp=parse(t).slice(1).filter(r=>r[0]&&r[0].trim()).map(r=>({item:r[0].trim(),cat:(r[1]||'').trim()||'Lain-lain',qty:+r[2]||1,price:num(r[3]),notes:(r[4]||'').trim(),link:(r[5]||'').trim(),tgl:dt(r[6]),unit:(r[7]||'').trim()||'pcs'}));if(!imp.length)toast('Tidak ada baris terbaca');draw()})}
-function doImp(){commit(imp);toast(imp.length+' item diimpor');imp=[];importing=false;draw()}
-function tpl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFFItem;Kategori;Qty;Harga satuan;Merk/Catatan;Link/Tempat;Tanggal rencana;Satuan\nMukena;Alat shalat;1;250000;Tazbiya;tiktokshop;2026-11-15;pcs\nSunscreen;Skincare;1;70000;Facetology;Tiktokshop;;pcs\n'],{type:'text/csv'}));a.download='template-import-seserahan.csv';a.click()}
-const bs='padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;';
-function impPanel(){return`<div class="card"><b>Import dari CSV</b><p class="mute">Kolom: Item; Kategori; Qty; Harga satuan; Merk/Catatan; Link/Tempat; Tanggal rencana (yyyy-mm-dd atau dd/mm/yyyy), Satuan (opsional, default pcs). Baris pertama adalah header.</p>
-<button onclick="tpl()" style="${bs}border:1px solid var(--wine);background:none;color:var(--wine)">Unduh template</button>
-<input type="file" accept=".csv,.txt" onchange="rd(this.files[0])" style="display:block;margin:12px 0">
-${imp.length?`<div class="mute" style="margin-bottom:8px">${imp.length} item siap: ${imp.slice(0,3).map(x=>x.item).join(', ')}${imp.length>3?'…':''}</div><button onclick="doImp()" style="${bs}width:100%;border:0;background:var(--wine);color:#fff">Impor ${imp.length} item</button>`:''}</div>`}
-function exp(x){const bt='padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;flex:1;background:none;';
- const diff=(x.real||x.total)-x.total;
- return`<div style="margin-top:10px;font-size:13px">
- <div class="row"><span class="mute">Rencana</span><span>${R(x.total)}${x.notes?' · '+x.notes:''}</span></div>
- <div class="row"><span class="mute">Realisasi</span><span>${x.done?R(x.real||x.total)+' · '+(x.rbrand||'merk belum diisi'):'belum dibeli'}</span></div>
- ${x.done?`<div class="row"><span class="mute">Selisih</span><b style="color:${diff>0?'var(--wine)':'var(--sage)'}">${diff>0?'+':''}${R(diff)}</b></div>`:''}
- ${x.link?`<div class="row"><span class="mute">Beli di</span><span>${x.link}</span></div>`:''}</div>
- ${x.done?`<div class="realbox">
-   <div class="sec">REALISASI — ISI KALAU BEDA DARI RENCANA</div>
-   <label>Merk / barang yang dibeli</label>
-   <input type="search" value="${(x.rbrand||'').replace(/"/g,'&quot;')}" placeholder="${(x.item||'').replace(/"/g,'&quot;')}" onchange="up(${x.no},'rbrand',this.value)">
-   <label>Harga realisasi total (Rp)</label>
-   <input type="number" value="${x.real||''}" placeholder="${x.total}" onchange="up(${x.no},'real',+this.value||0)">
-   <div class="mute" style="margin-top:6px">Kosongkan harga kalau sama dengan rencana (${R(x.total)}).</div>
- </div>`:''}
- <div class="row" style="margin-top:12px;gap:8px"><button onclick="openEdit(${x.no})" style="${bt}border:1px solid var(--wine);color:var(--wine)">Edit lengkap</button><button onclick="del(${x.no})" style="${bt}border:1px solid var(--line);color:#a33">Hapus</button></div>`}
-function openEdit(n,scrollReal){const x=items.find(i=>i.no===n);if(!x)return;editing=n;
- const L=(l,i,v,t,a)=>`<label>${l}</label><input id="${i}" type="${t||'search'}" value="${String(v==null?'':v).replace(/"/g,'&quot;')}" ${a||''}>`;
- const m=document.createElement('div');m.id='md';m.onclick=ev=>{if(ev.target===m)closeEdit()};
- const b='padding:13px;border-radius:10px;font:600 15px Figtree,sans-serif;';
- m.innerHTML=`<div class="mc"><h3>Edit item</h3><div class="sec">RENCANA</div>
- ${L('Nama item','e_i',x.item)}${L('Kategori','e_c',x.cat,'search','list="cl2"')}<datalist id="cl2">${[...new Set(items.map(y=>y.cat))].map(c=>`<option value="${c}">`).join('')}</datalist>
- <div class="ex"><div>${L('Qty','e_q',x.qty,'number')}</div><div>${L('Satuan','e_u',x.unit||'pcs')}</div></div>
- ${L('Harga satuan (Rp)','e_p',x.price,'number')}${L('Merk / catatan rencana','e_n',x.notes)}${L('Link / tempat beli (rencana)','e_l',x.link)}
- <hr><div class="sec">REALISASI</div>
- <label style="display:flex;gap:10px;align-items:center;color:var(--ink);font-size:15px;margin-top:14px"><input id="e_d" type="checkbox" ${x.done?'checked':''} style="width:22px;height:22px;accent-color:var(--sage)">Sudah dibeli</label>
- ${L('Tanggal rencana / tanggal beli','e_t',x.tgl,'date')}${L('Harga realisasi total (Rp)','e_r',x.real||'','number','placeholder="'+x.total+'"')}${L('Merk / barang yang dibeli','e_b',x.rbrand||'','search','placeholder="Isi kalau beda dari rencana"')}
- <div class="grid" style="margin-top:20px"><button onclick="closeEdit()" style="${b}border:0;background:#eee;color:var(--ink)">Batal</button><button onclick="saveEdit(${n})" style="${b}border:0;background:var(--wine);color:#fff">Simpan Perubahan</button></div></div>`;
- document.body.appendChild(m);
- if(scrollReal){const el=$('#e_b');if(el){el.scrollIntoView({block:'center'});setTimeout(()=>el.focus(),150)}}}
-function closeEdit(){const m=$('#md');if(m)m.remove();editing=null}
-function saveEdit(n){const x=items.find(i=>i.no===n),g=i=>$('#'+i).value.trim(),price=+g('e_p'),item=g('e_i');
- if(!item||!price){toast('Isi nama item dan harga');return}
- Object.assign(x,{item,cat:g('e_c')||'Lain-lain',qty:+g('e_q')||1,unit:g('e_u')||'pcs',price,notes:g('e_n'),link:g('e_l'),tgl:g('e_t'),done:$('#e_d').checked,real:+g('e_r')||0,rbrand:g('e_b')});
- x.total=x.price*x.qty;if(x.done){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total}
- closeEdit();localStorage[D]=JSON.stringify(items);
- if(localStorage[K]){queue({action:'edit',no:n,item:x.item,cat:x.cat,qty:x.qty,unit:x.unit,price:x.price,notes:x.notes,link:x.link});queue({no:n,done:x.done,tgl:x.tgl,real:x.real,rbrand:x.rbrand})}
- draw();toast('Perubahan disimpan')}
-function del(n){const x=items.find(i=>i.no===n);if(!confirm('Hapus "'+x.item+'" dari daftar?'))return;
- items=items.filter(i=>i.no!==n);open=null;localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({action:'delete',no:n});draw();toast('Item dihapus')}
-function tg(n,v){const x=items.find(i=>i.no===n);x.done=v;
- if(v){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total;save(x);open=n;draw();
-   if(!x.rbrand){openEdit(n,true)}
- } else {save(x);draw()}}
-function up(n,k,v){const x=items.find(i=>i.no===n);x[k]=v;if(k==='real'&&!v)x.real=0;save(x);draw();toast('Realisasi disimpan')}
-function donut(parts){const s=parts.reduce((a,p)=>a+p.v,0)||1;let o=0;const r=52,c=2*Math.PI*r;
- return`<svg viewBox="0 0 140 140" width="150"><g transform="rotate(-90 70 70)">${parts.map((p,i)=>{const l=p.v/s*c,e=`<circle cx="70" cy="70" r="${r}" fill="none" stroke="${COL[i%8]}" stroke-width="22" stroke-dasharray="${l} ${c-l}" stroke-dashoffset="${-o}"/>`;o+=l;return e}).join('')}</g></svg>`}
-function charts(t){const cats={};items.forEach(x=>{const c=cats[x.cat]=cats[x.cat]||{b:0,r:0,n:0,d:0};c.b+=x.total;c.n++;if(x.done){c.r+=x.real||x.total;c.d++}});
- const cl=Object.entries(cats).sort((a,b)=>b[1].b-a[1].b);const mo={};items.filter(x=>x.done&&x.tgl).forEach(x=>{const k=x.tgl.slice(0,7);mo[k]=(mo[k]||0)+(x.real||x.total)});
- const ml=Object.entries(mo).sort(),mx=Math.max(1,...ml.map(m=>m[1]));
- return`<div class="card"><b>Porsi anggaran per kategori</b><div class="row" style="margin-top:8px">${donut(cl.map(c=>({v:c[1].b})))}<div>${cl.map((c,i)=>`<div class="leg"><b style="background:${COL[i%8]}"></b>${c[0]} ${(c[1].b/t.b*100).toFixed(0)}%</div>`).join('')}</div></div></div>
- <div class="card"><b>Progres belanja per kategori</b>${cl.map(c=>`<div style="margin-top:10px"><div class="row"><span>${c[0]}</span><span class="mute">${c[1].d}/${c[1].n} · ${c[1].b?(c[1].r/c[1].b*100).toFixed(0):0}% dari anggaran</span></div><div class="bar"><i style="width:${Math.min(100,c[1].r/c[1].b*100)}%"></i></div></div>`).join('')}</div>
- <div class="card"><b>Tren realisasi per bulan</b>${ml.length?`<div class="row" style="align-items:flex-end;height:130px;margin-top:10px">${ml.map(m=>`<div style="flex:1;text-align:center"><div class="mute" style="font-size:11px">${R(m[1]/1000)}rb</div><div style="background:var(--wine);height:${m[1]/mx*90}px;border-radius:4px 4px 0 0"></div><div class="mute">${m[0].slice(5)}/${m[0].slice(2,4)}</div></div>`).join('')}</div>`:'<p class="mute">Muncul setelah ada item yang dicentang dengan tanggal.</p>'}</div>`}
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');tab=b.dataset.t;draw()});
-if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.error('SW gagal:',e)));
-
-// ===== AUTO UPDATE =====
-async function checkUpdate(silent){
-  try{
-    const r=await fetch('./version.json?t='+Date.now(),{cache:'no-store'});
-    const j=await r.json();
-    const seen=localStorage.app_v;
-    if(!seen){
-      localStorage.app_v=j.v;
-      if(!silent) toast('Versi tersimpan: '+j.v);
-      return 'first';
-    }
-    if(j.v!==seen){
-      console.log('Versi baru terdeteksi:',j.v,'(lama:',seen,')');
-      localStorage.app_v=j.v;
-      return j.v;
-    }
-    if(!silent) toast('Sudah versi terbaru ('+seen+')');
-    return 'latest';
-  }catch(e){
-    console.warn('Cek update gagal:',e);
-    if(!silent) toast('Gagal cek update, coba lagi');
-    return 'error';
-  }
-}
-async function hardReset(){
-  try{
-    if('serviceWorker' in navigator){
-      const regs=await navigator.serviceWorker.getRegistrations();
-      for(const reg of regs) await reg.unregister();
-    }
-    if('caches' in window){
-      const keys=await caches.keys();
-      await Promise.all(keys.map(k=>caches.delete(k)));
-    }
-  }catch(e){}
-  location.replace(location.pathname+'?fresh='+Date.now());
-}
-async function manualUpdate(){
-  toast('Memeriksa update...');
-  const r=await checkUpdate(true);
-  if(r==='error'){ toast('Gagal cek update, periksa koneksi'); return; }
-  if(r==='first'){ toast('Versi tersimpan, memuat ulang...'); await hardReset(); return; }
-  if(r==='latest'){ toast('Sudah versi terbaru · bersihkan cache...'); setTimeout(hardReset,600); return; }
-  toast('Versi baru '+r+' · memuat ulang...');
-  setTimeout(hardReset,600);
-}
-
-let dp=null;
-function showInst(t,f){if($('#ib'))return;const b=document.createElement('button');b.id='ib';b.innerHTML=t+' <span id="ibx" style="margin-left:10px;opacity:.7">✕</span>';
- b.style.cssText='position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#8f1d21;color:#fff;padding:12px 22px;border:0;border-radius:30px;font:600 14px Figtree,sans-serif;box-shadow:0 4px 12px #0004;z-index:9999;white-space:nowrap';
- b.onclick=ev=>{if(ev.target.id==='ibx'){rmInst();return}f()};document.body.appendChild(b)}
-function rmInst(){const b=$('#ib');if(b)b.remove()}
-addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;showInst('⬇️ Install Aplikasi',async()=>{dp.prompt();await dp.userChoice;dp=null;rmInst()})});
-addEventListener('appinstalled',rmInst);
-if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!(matchMedia('(display-mode: standalone)').matches||navigator.standalone))showInst('⬇️ Cara pasang di iPhone',()=>alert('Buka lewat Safari, ketuk tombol Bagikan, lalu pilih "Tambah ke Layar Utama".'));
-const _p=new URLSearchParams(location.search).get('api');if(_p){localStorage[K]=_p;history.replaceState(null,'',location.pathname)}
-if(localStorage[D]){items=JSON.parse(localStorage[D]);draw()}
-checkUpdate(true);
-sync();setInterval(()=>{if(!document.hidden)sync()},30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});addEventListener('online',()=>{toast('Kembali online, menyinkronkan...');stat();sync()});addEventListener('offline',()=>{stat();toast('Mode offline, data disimpan lokal')});
-</script></body></html>
+renderNav('home');
+window.drawPage=function(){
+  const t=tot();
+  $('#sub').textContent=t.dn+' dari '+t.n+' item sudah dibeli';
+  if(!localStorage[K]&&!demo){ $('#m').innerHTML=welcomeHTML(); return; }
+  $('#m').innerHTML=`
+    <div class="grid" style="margin-bottom:12px">
+      <div class="card"><div class="mute">Total realisasi</div><div class="num" style="font-size:20px;color:var(--wine)">${R(t.r)}</div></div>
+      <div class="card"><div class="mute">Anggaran</div><div class="num" style="font-size:20px">${R(t.b)}</div></div>
+    </div>
+    <div class="card">
+      <div class="row"><b>Progres</b><span class="mute">${t.pct.toFixed(0)}%</span></div>
+      <div class="bar"><i style="width:${t.pct}%"></i></div>
+      <div class="mute">${t.dn} dari ${t.n} item sudah dibeli</div>
+    </div>
+    <a class="menu-item" href="daftar.html">
+      <div class="menu-icon" style="background:#fde8e4">📋</div>
+      <div class="menu-text"><b>Daftar Seserahan</b><small>Kelola item, realisasi, edit & harga</small></div>
+      <div class="menu-arrow">›</div>
+    </a>
+    <a class="menu-item" href="grafik.html">
+      <div class="menu-icon" style="background:#f0e8f8">📊</div>
+      <div class="menu-text"><b>Grafik & Analisa</b><small>Porsi anggaran, progres, tren realisasi</small></div>
+      <div class="menu-arrow">›</div>
+    </a>
+    <a class="menu-item" href="planning.html">
+      <div class="menu-icon" style="background:#e8f4ea">💍</div>
+      <div class="menu-text"><b>Wedding Planning</b><small>Timeline & checklist persiapan</small></div>
+      <div class="menu-arrow">›</div>
+    </a>
+    <div class="mute" style="text-align:center;margin-top:14px">Versi ${localStorage.app_v||'-'}</div>`;
+};
+</script>
+</body></html>
