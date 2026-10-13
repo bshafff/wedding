@@ -7,10 +7,8 @@ const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f'
 
 let lastSync='',items=[],demo=false;
 
-// ===== Toast =====
 function toast(t,ms){const e=$('#st');if(!e)return;e.textContent=t;e.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(()=>e.style.display='none',ms||1800)}
 
-// ===== Load & sync =====
 async function load(){
   const u=localStorage[K];
   if(!u){ demo=true; items=JSON.parse(localStorage[D]||'[]'); drawPage(); return; }
@@ -61,32 +59,54 @@ function save(it){localStorage[D]=JSON.stringify(items);if(localStorage[K])queue
 function tot(){const b=items.reduce((a,x)=>a+x.total,0),d=items.filter(x=>x.done),r=d.reduce((a,x)=>a+(x.real||x.total),0),bd=d.reduce((a,x)=>a+x.total,0);
  return{b,n:items.length,dn:d.length,r,bd,sisa:b-bd,pct:items.length?d.length/items.length*100:0}}
 
-// ===== Auto update =====
-async function checkUpdate(silent){
+// ===== AUTO UPDATE =====
+async function checkUpdate(){
   try{
     const r=await fetch('./version.json?t='+Date.now(),{cache:'no-store'});
     const j=await r.json();
     const seen=localStorage.app_v;
-    if(!seen){ localStorage.app_v=j.v; if(!silent) toast('Versi tersimpan: '+j.v); return 'first'; }
-    if(j.v!==seen){ console.log('Versi baru:',j.v,'(lama:',seen,')'); localStorage.app_v=j.v; return j.v; }
-    if(!silent) toast('Sudah versi terbaru ('+seen+')');
-    return 'latest';
-  }catch(e){ console.warn('Cek update gagal:',e); if(!silent) toast('Gagal cek update, coba lagi'); return 'error'; }
+    if(!seen){ localStorage.app_v=j.v; return {state:'first', v:j.v}; }
+    if(j.v!==seen){ console.log('Versi baru:',j.v,'(lama:',seen,')'); return {state:'new', v:j.v, old:seen}; }
+    return {state:'latest', v:seen};
+  }catch(e){ console.warn('Cek update gagal:',e); return {state:'error'}; }
 }
 async function hardReset(){
   try{
-    if('serviceWorker' in navigator){ const regs=await navigator.serviceWorker.getRegistrations(); for(const reg of regs) await reg.unregister(); }
-    if('caches' in window){ const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs) await reg.unregister();
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
+  try{
+    const r=await fetch('./version.json?t='+Date.now(),{cache:'no-store'});
+    const j=await r.json(); localStorage.app_v=j.v;
   }catch(e){}
   location.replace(location.pathname+'?fresh='+Date.now());
 }
+function showUpdateBanner(version){
+  if(document.getElementById('ub'))return;
+  const b=document.createElement('div');
+  b.id='ub';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;background:#5f7f62;color:#fff;padding:10px 14px;text-align:center;z-index:99999;font:600 14px Figtree,sans-serif;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap';
+  b.innerHTML='<span>Versi baru '+version+' tersedia</span>'+
+    '<button id="ub-yes" style="padding:6px 12px;border:0;border-radius:6px;background:#fff;color:#5f7f62;font:600 13px Figtree,sans-serif">Muat ulang</button>'+
+    '<button id="ub-no" style="padding:6px 12px;border:1px solid #fff;border-radius:6px;background:none;color:#fff;font:600 13px Figtree,sans-serif">Nanti</button>';
+  document.body.appendChild(b);
+  document.getElementById('ub-yes').onclick=()=>hardReset();
+  document.getElementById('ub-no').onclick=()=>b.remove();
+}
 async function manualUpdate(){
   toast('Memeriksa update...');
-  const r=await checkUpdate(true);
-  if(r==='error'){ toast('Gagal cek update, periksa koneksi'); return; }
-  if(r==='first'){ toast('Versi tersimpan, memuat ulang...'); await hardReset(); return; }
-  if(r==='latest'){ toast('Sudah versi terbaru · bersihkan cache...'); setTimeout(hardReset,600); return; }
-  toast('Versi baru '+r+' · memuat ulang...'); setTimeout(hardReset,600);
+  const r=await checkUpdate();
+  if(r.state==='error'){ toast('Gagal cek update, periksa koneksi'); return; }
+  if(r.state==='first'){ toast('Versi tersimpan: '+r.v); return; }
+  if(r.state==='latest'){ toast('Sudah versi terbaru ('+r.v+')'); return; }
+  showUpdateBanner(r.v);
+  toast('Versi baru tersedia');
 }
 
 // ===== Nav =====
@@ -96,7 +116,6 @@ function renderNav(active){
   nav.innerHTML=items.map(x=>`<button class="${active===x[0]?'on':''}" onclick="location.href='${x[1]}'"><div class="ic">${x[2]}</div>${x[3]}</button>`).join('');
 }
 
-// ===== Welcome / Demo =====
 function welcomeHTML(){
   return `<div class="card" style="text-align:center;padding:30px 18px"><div class="num" style="font-size:24px;color:var(--wine)">Sambungkan ke Google Sheet</div>
 <p class="mute" style="margin:10px 0 20px">Ketuk sekali untuk memuat daftar seserahan dan menyinkronkan semua perubahan.</p>
@@ -104,7 +123,6 @@ function welcomeHTML(){
 <p style="margin-top:18px"><a href="#" class="mute" onclick="demoMode();return false">Coba mode demo</a></p></div>`;
 }
 
-// ===== Page render hook =====
 function drawPage(){ if(typeof window.drawPage==='function') window.drawPage(); }
 
 // ===== Install prompt =====
@@ -125,7 +143,7 @@ window.addEventListener('load',()=>{
   const stored=JSON.parse(localStorage[D]||'[]');
   if(stored.length) items=stored;
   drawPage();
-  checkUpdate(true);
+  checkUpdate().then(r=>{ if(r.state==='new') showUpdateBanner(r.v); });
   sync();
   setInterval(()=>{if(!document.hidden)sync()},30000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
