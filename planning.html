@@ -8,11 +8,14 @@
 <header>
   <div class="hbtns">
     <button onclick="editInfo()">Edit Info</button>
+    <button onclick="toast('Menyinkronkan...');sync()">Sync</button>
+    <button onclick="manualUpdate()">🔄</button>
     <button onclick="resetPlan()">Reset</button>
   </div>
   <h1>Wedding Planning</h1>
   <div class="couple" id="couple">—</div>
   <small id="info"></small>
+  <div><span id="cn" class="badge"></span></div>
 </header>
 <div id="st"></div>
 <main id="m"></main>
@@ -63,26 +66,57 @@ const PLAN_DEFAULT={
 
 function uid(){return Math.random().toString(36).slice(2,9)}
 function esc(s){return String(s==null?'':s).replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function normalize(j){
+  if(!j||!Array.isArray(j.sections)) return null;
+  j.info=j.info||{couple:'',date:'',location:''};
+  j.sections.forEach(s=>{
+    if(!s.id) s.id=uid();
+    if(!Array.isArray(s.tasks)) s.tasks=[];
+    if(!s.label) s.label='H-…';
+    s.tasks.forEach(t=>{ if(!t.id) t.id=uid(); if(typeof t.done!=='boolean') t.done=false; });
+  });
+  return j;
+}
 
-function loadPlan(){
+// Baca plan lokal
+function loadPlanLocal(){
   try{
     const j=JSON.parse(localStorage[PK]||'null');
-    if(!j||!Array.isArray(j.sections)) throw 0;
-    j.info=j.info||{couple:'',date:'',location:''};
-    j.sections.forEach(s=>{
-      if(!s.id) s.id=uid();
-      if(!Array.isArray(s.tasks)) s.tasks=[];
-      if(!s.label) s.label='H-…';
-      s.tasks.forEach(t=>{ if(!t.id) t.id=uid(); if(typeof t.done!=='boolean') t.done=false; });
-    });
-    return j;
+    return normalize(j) || JSON.parse(JSON.stringify(PLAN_DEFAULT));
   }catch(e){ return JSON.parse(JSON.stringify(PLAN_DEFAULT)); }
 }
-function savePlan(p){ localStorage[PK]=JSON.stringify(p); drawPage(); }
 
-/* ---------- INFO ---------- */
+// Fetch dari server (kalau URL di-set)
+async function loadPlanRemote(){
+  const u=localStorage[K];
+  if(!u) return null;
+  try{
+    const r=await fetch(u+'?type=plan&t='+Date.now());
+    const txt=await r.text();
+    if(!txt || !txt.trim() || txt.trim()==='{}' || txt.trim()==='null') return null;
+    return normalize(JSON.parse(txt));
+  }catch(e){ console.warn('Gagal load plan:',e); return null; }
+}
+
+// Init: coba server dulu; fallback ke lokal
+async function initPlan(){
+  const remote=await loadPlanRemote();
+  if(remote){
+    localStorage[PK]=JSON.stringify(remote);
+  }
+  drawPage();
+}
+
+// Simpan: local + queue POST ke server
+function savePlan(p){
+  p=normalize(p)||p;
+  localStorage[PK]=JSON.stringify(p);
+  if(localStorage[K]) queue({action:'planSave', data:p});
+  drawPage();
+}
+
 function editInfo(){
-  const p=loadPlan();
+  const p=loadPlanLocal();
   const c=prompt('Nama pasangan:',p.info.couple); if(c===null)return;
   const d=prompt('Tanggal (yyyy-mm-dd):',p.info.date); if(d===null)return;
   const l=prompt('Lokasi:',p.info.location); if(l===null)return;
@@ -91,19 +125,21 @@ function editInfo(){
 }
 function resetPlan(){
   if(!confirm('Reset semua checklist ke contoh default? Data yang kamu buat akan hilang.'))return;
-  localStorage.removeItem(PK); drawPage(); toast('Checklist direset');
+  localStorage.removeItem(PK);
+  const def=JSON.parse(JSON.stringify(PLAN_DEFAULT));
+  savePlan(def);
+  toast('Checklist direset');
 }
 
-/* ---------- SECTION ---------- */
 function addSection(){
   const l=prompt('Nama bagian (contoh: H-12 bulan, H-1 minggu, Hari-H):','H-1 bulan');
   if(!l)return;
-  const p=loadPlan();
+  const p=loadPlanLocal();
   p.sections.push({id:uid(), label:l.trim(), tasks:[]});
   savePlan(p); toast('Bagian ditambahkan');
 }
 function editSection(secId){
-  const p=loadPlan();
+  const p=loadPlanLocal();
   const s=p.sections.find(x=>x.id===secId); if(!s)return;
   const l=prompt('Nama bagian:',s.label);
   if(l===null)return;
@@ -111,25 +147,22 @@ function editSection(secId){
   savePlan(p);
 }
 function delSection(secId){
-  const p=loadPlan();
+  const p=loadPlanLocal();
   const s=p.sections.find(x=>x.id===secId); if(!s)return;
   if(!confirm('Hapus bagian "'+s.label+'" beserta '+s.tasks.length+' tugas di dalamnya?'))return;
   p.sections=p.sections.filter(x=>x.id!==secId);
   savePlan(p); toast('Bagian dihapus');
 }
 function moveSection(secId,dir){
-  const p=loadPlan();
+  const p=loadPlanLocal();
   const i=p.sections.findIndex(x=>x.id===secId); if(i<0)return;
   const j=i+dir; if(j<0||j>=p.sections.length)return;
-  const a=p.sections.slice();
-  [a[i],a[j]]=[a[j],a[i]];
-  p.sections=a;
+  const a=p.sections.slice(); [a[i],a[j]]=[a[j],a[i]]; p.sections=a;
   savePlan(p);
 }
 
-/* ---------- TASK ---------- */
 function toggleTask(secId,taskId){
-  const p=loadPlan();
+  const p=loadPlanLocal();
   const s=p.sections.find(x=>x.id===secId); if(!s)return;
   const t=s.tasks.find(x=>x.id===taskId); if(!t)return;
   t.done=!t.done;
@@ -137,13 +170,13 @@ function toggleTask(secId,taskId){
 }
 function delTask(secId,taskId){
   if(!confirm('Hapus tugas ini?'))return;
-  const p=loadPlan();
+  const p=loadPlanLocal();
   const s=p.sections.find(x=>x.id===secId); if(!s)return;
   s.tasks=s.tasks.filter(x=>x.id!==taskId);
   savePlan(p); toast('Tugas dihapus');
 }
 function openTaskModal(secId,taskId){
-  const p=loadPlan();
+  const p=loadPlanLocal();
   const sec=p.sections.find(s=>s.id===secId); if(!sec)return;
   const isNew=!taskId;
   const t=isNew ? {cat:'',title:''} : (sec.tasks.find(x=>x.id===taskId)||{cat:'',title:''});
@@ -166,7 +199,7 @@ function openTaskModal(secId,taskId){
   setTimeout(()=>{ const e=document.getElementById('tk_t'); if(e) e.focus(); }, 100);
 }
 function saveTaskModal(secId,taskId){
-  const p=loadPlan();
+  const p=loadPlanLocal();
   const sec=p.sections.find(s=>s.id===secId); if(!sec)return;
   const cat=document.getElementById('tk_c').value.trim();
   const title=document.getElementById('tk_t').value.trim();
@@ -181,46 +214,41 @@ function saveTaskModal(secId,taskId){
   savePlan(p); toast('Tersimpan');
 }
 
-/* ---------- RENDER ---------- */
+// Override tombol Sync supaya reload plan juga
+const _origSync=window.sync;
+window.sync=async function(){
+  await _origSync();
+  const r=await loadPlanRemote();
+  if(r){ localStorage[PK]=JSON.stringify(r); drawPage(); toast('Planning tersinkron'); }
+};
+
 window.drawPage=function(){
-  const p=loadPlan();
+  const p=loadPlanLocal();
   document.getElementById('couple').textContent=p.info.couple||'';
   const fd=s=>s?new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
   document.getElementById('info').textContent=(p.info.date?fd(p.info.date):'')+(p.info.location?' · '+p.info.location:'');
-
   const all=p.sections.flatMap(s=>s.tasks);
   const done=all.filter(t=>t.done).length;
   const pct=all.length?done/all.length*100:0;
-
   let html='';
   html+='<div class="card">'+
     '<div class="row"><b>Progres persiapan</b><span class="mute">'+done+'/'+all.length+'</span></div>'+
     '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
     '<div class="mute">'+pct.toFixed(0)+'% selesai</div>'+
   '</div>';
-
   html+='<button onclick="addSection()" style="padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;width:100%;border:1px dashed var(--wine);background:none;color:var(--wine);margin-bottom:12px">+ Tambah bagian (H-…)</button>';
-
-  if(!p.sections.length){
-    html+='<p class="mute" style="text-align:center">Belum ada bagian. Ketuk tombol di atas untuk mulai.</p>';
-  }
-
+  if(!p.sections.length) html+='<p class="mute" style="text-align:center">Belum ada bagian.</p>';
   p.sections.forEach((s,idx)=>{
     const sd=s.tasks.filter(t=>t.done).length;
     html+='<div class="plan-sec" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px">';
-    html+='<div class="row" style="margin-bottom:8px;align-items:flex-start">';
-    html+='<h3 style="margin:0;font-family:Fraunces,Georgia,serif;color:var(--wine);font-size:17px;flex:1">'+esc(s.label)+' <span class="mute" style="font-size:12px;font-weight:400">· '+sd+'/'+s.tasks.length+'</span></h3>';
-    html+='</div>';
+    html+='<div class="row" style="margin-bottom:8px;align-items:flex-start"><h3 style="margin:0;font-family:Fraunces,Georgia,serif;color:var(--wine);font-size:17px;flex:1">'+esc(s.label)+' <span class="mute" style="font-size:12px;font-weight:400">· '+sd+'/'+s.tasks.length+'</span></h3></div>';
     html+='<div class="row" style="gap:6px;justify-content:flex-end;margin-bottom:8px">';
     if(idx>0) html+='<button onclick="moveSection(\''+s.id+'\',-1)" title="Naik" style="padding:4px 10px;border:1px solid var(--line);background:none;border-radius:8px;font-size:13px">▲</button>';
     if(idx<p.sections.length-1) html+='<button onclick="moveSection(\''+s.id+'\',1)" title="Turun" style="padding:4px 10px;border:1px solid var(--line);background:none;border-radius:8px;font-size:13px">▼</button>';
     html+='<button onclick="editSection(\''+s.id+'\')" style="padding:4px 10px;border:1px solid var(--wine);background:none;color:var(--wine);border-radius:8px;font-size:13px">✏️ Nama</button>';
     html+='<button onclick="delSection(\''+s.id+'\')" style="padding:4px 10px;border:1px solid var(--line);background:none;color:#a33;border-radius:8px;font-size:13px">🗑️</button>';
     html+='</div>';
-
-    if(!s.tasks.length){
-      html+='<p class="mute" style="margin:6px 0">Belum ada tugas.</p>';
-    }
+    if(!s.tasks.length) html+='<p class="mute" style="margin:6px 0">Belum ada tugas.</p>';
     s.tasks.forEach(t=>{
       html+='<div class="plan-task '+(t.done?'done':'')+'">'+
         '<input type="checkbox" '+(t.done?'checked':'')+' onchange="toggleTask(\''+s.id+'\',\''+t.id+'\')">'+
@@ -232,9 +260,11 @@ window.drawPage=function(){
     html+='<button onclick="openTaskModal(\''+s.id+'\')" style="margin-top:6px;padding:9px 12px;border:1px dashed var(--line);background:none;border-radius:8px;font:600 13px Figtree,sans-serif;color:var(--wine);width:100%">+ Tambah tugas</button>';
     html+='</div>';
   });
-
-  html+='<div class="mute" style="text-align:center;margin-top:14px">Checklist tersimpan lokal di HP ini.</div>';
+  html+='<div class="mute" style="text-align:center;margin-top:14px">Planning tersinkron ke Google Sheet.</div>';
   document.getElementById('m').innerHTML=html;
 };
+
+// Init
+initPlan();
 </script>
 </body></html>
