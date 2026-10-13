@@ -1,0 +1,124 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json">
+<title>Daftar · Seserahan</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header>
+  <div class="hbtns"><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()">Sync</button><button onclick="manualUpdate()">🔄</button></div>
+  <h1>Daftar</h1>
+  <small id="sub"></small><small id="sy"></small>
+  <div><span id="cn" class="badge"></span></div>
+</header>
+<div id="st"></div>
+<main id="m"></main>
+<nav></nav>
+<script src="app.js"></script>
+<script>
+renderNav('daftar');
+let flt='belum',q='',open=null,adding=false,importing=false,imp=[];
+function list(){
+  let a=items.filter(x=>flt==='semua'||(flt==='belum')!==x.done).filter(x=>(x.item+x.cat+x.notes).toLowerCase().includes(q));
+  if(flt==='belum')a.sort((x,y)=>(x.tgl||'9').localeCompare(y.tgl||'9'));
+  const bs='padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;';
+  return`<div class="chips">${['belum','sudah','semua'].map(f=>`<button class="${f===flt?'on':''}" onclick="flt='${f}';drawPage()">${f[0].toUpperCase()+f.slice(1)}</button>`).join('')}</div>
+  <input type="search" placeholder="Cari item atau kategori" value="${q}" oninput="q=this.value.toLowerCase();drawPage();this.focus()" style="margin-bottom:10px">
+  <div class="row" style="margin-bottom:12px">
+    <button onclick="adding=!adding;importing=false;drawPage()" style="${bs}flex:1;border:1px dashed var(--wine);background:none;color:var(--wine)">${adding?'Batal':'+ Tambah item'}</button>
+    <button onclick="importing=!importing;adding=false;drawPage()" style="${bs}flex:1;border:1px dashed var(--wine);background:none;color:var(--wine)">${importing?'Batal':'Import CSV'}</button>
+  </div>`+(adding?formAdd():'')+(importing?impPanel():'')+
+  a.map(x=>`<div class="card ${x.done?'done':''}"><div class="it">
+    <input type="checkbox" ${x.done?'checked':''} onchange="tg(${x.no},this.checked)">
+    <div class="t" onclick="open=open===${x.no}?null:${x.no};drawPage()">
+      <div class="nm"><b>${x.item}</b></div>
+      <div class="mute">${x.cat} · ${x.qty} ${x.unit||''} · ${R(x.total)}</div>
+      <div class="tag">${x.tgl?(x.done?'Dibeli ':'Rencana ')+fd(x.tgl):'Belum ada tanggal'}</div>
+      ${x.notes?`<div class="mute">${x.notes}</div>`:''}
+      ${x.done&&(x.rbrand||x.real)?`<div class="mute" style="color:var(--sage)">Dibeli: ${x.rbrand||'-'} · ${R(x.real||x.total)}${(x.real||x.total)!==x.total?' <b>'+(x.real>x.total?'(+':'(–')+R(Math.abs((x.real||x.total)-x.total))+')</b>':''}</div>`:''}
+    </div>
+    <button class="pencil" onclick="event.stopPropagation();openEdit(${x.no})">✏️</button>
+  </div>${open===x.no?exp(x):''}</div>`).join('')||'<p class="mute">Tidak ada item.</p>';
+}
+function formAdd(){return`<div class="card"><div class="ex" style="margin:0">
+ <div style="grid-column:1/3"><label>Nama item</label><input id="a_i" type="search"></div>
+ <div><label>Kategori</label><input id="a_c" type="search" list="cl" placeholder="Makeup, Skincare…"><datalist id="cl">${[...new Set(items.map(x=>x.cat))].map(c=>`<option value="${c}">`).join('')}</datalist></div>
+ <div><label>Merk / catatan</label><input id="a_n" type="search"></div>
+ <div><label>Qty</label><input id="a_q" type="number" value="1"></div>
+ <div><label>Harga satuan (Rp)</label><input id="a_p" type="number"></div>
+ <div style="grid-column:1/3"><label>Link / nama tempat</label><input id="a_l" type="search"></div>
+ <div style="grid-column:1/3"><label>Tanggal rencana beli (opsional)</label><input id="a_t" type="date"></div>
+ <button onclick="add()" style="grid-column:1/3;padding:12px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan item</button>
+ </div></div>`}
+function impPanel(){const bs='padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;';return`<div class="card"><b>Import dari CSV</b><p class="mute">Kolom: Item; Kategori; Qty; Harga satuan; Merk/Catatan; Link/Tempat; Tanggal (yyyy-mm-dd atau dd/mm/yyyy); Satuan. Baris pertama header.</p>
+<button onclick="tpl()" style="${bs}border:1px solid var(--wine);background:none;color:var(--wine)">Unduh template</button>
+<input type="file" accept=".csv,.txt" onchange="rd(this.files[0])" style="display:block;margin:12px 0">
+${imp.length?`<div class="mute" style="margin-bottom:8px">${imp.length} item siap</div><button onclick="doImp()" style="${bs}width:100%;border:0;background:var(--wine);color:#fff">Impor ${imp.length} item</button>`:''}</div>`}
+function exp(x){const bt='padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;flex:1;background:none;';
+ const diff=(x.real||x.total)-x.total;
+ return`<div style="margin-top:10px;font-size:13px">
+ <div class="row"><span class="mute">Rencana</span><span>${R(x.total)}${x.notes?' · '+x.notes:''}</span></div>
+ <div class="row"><span class="mute">Realisasi</span><span>${x.done?R(x.real||x.total)+' · '+(x.rbrand||'merk belum diisi'):'belum dibeli'}</span></div>
+ ${x.done?`<div class="row"><span class="mute">Selisih</span><b style="color:${diff>0?'var(--wine)':'var(--sage)'}">${diff>0?'+':''}${R(diff)}</b></div>`:''}
+ ${x.link?`<div class="row"><span class="mute">Beli di</span><span>${x.link}</span></div>`:''}</div>
+ ${x.done?`<div class="realbox"><div class="sec">REALISASI — ISI KALAU BEDA DARI RENCANA</div>
+ <label>Merk / barang yang dibeli</label>
+ <input type="search" value="${(x.rbrand||'').replace(/"/g,'&quot;')}" placeholder="${(x.item||'').replace(/"/g,'&quot;')}" onchange="up(${x.no},'rbrand',this.value)">
+ <label>Harga realisasi total (Rp)</label>
+ <input type="number" value="${x.real||''}" placeholder="${x.total}" onchange="up(${x.no},'real',+this.value||0)">
+ </div>`:''}
+ <div class="row" style="margin-top:12px;gap:8px">
+ <button onclick="openEdit(${x.no})" style="${bt}border:1px solid var(--wine);color:var(--wine)">Edit lengkap</button>
+ <button onclick="del(${x.no})" style="${bt}border:1px solid var(--line);color:#a33">Hapus</button></div>`}
+const fd=s=>new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+function addLocal(list){let n=Math.max(0,...items.map(x=>x.no));list.forEach(d=>items.push({no:++n,cat:d.cat,item:d.item,qty:d.qty,unit:d.unit||'pcs',price:d.price,total:d.price*d.qty,link:d.link,notes:d.notes,done:false,tgl:d.tgl||'',real:0}));localStorage[D]=JSON.stringify(items)}
+function commit(list){addLocal(list);if(localStorage[K])queue({action:'addMany',list});drawPage()}
+function add(){const g=i=>$('#'+i).value.trim(),item=g('a_i'),price=+g('a_p'),qty=+g('a_q')||1;
+ if(!item||!price){toast('Isi nama item dan harga');return}
+ adding=false;commit([{item,cat:g('a_c')||'Lain-lain',qty,unit:'pcs',price,link:g('a_l'),notes:g('a_n'),tgl:g('a_t')}]);toast('Item ditambahkan')}
+function parse(t){t=t.replace(/^\uFEFF/,'');const h=t.split('\n')[0],sep=(h.match(/;/g)||[]).length>(h.match(/,/g)||[]).length?';':',';const rows=[];let r=[],c='',qt=false;
+ for(let i=0;i<t.length;i++){const ch=t[i];
+  if(qt){if(ch=='"'&&t[i+1]=='"'){c+='"';i++}else if(ch=='"')qt=false;else c+=ch}
+  else if(ch=='"')qt=true;else if(ch==sep){r.push(c);c=''}else if(ch=='\n'){r.push(c);rows.push(r);r=[];c=''}else if(ch!='\r')c+=ch}
+ if(c||r.length){r.push(c);rows.push(r)}return rows}
+const num=x=>+String(x||'').replace(/[^\d]/g,'')||0,pad=n=>String(n).padStart(2,'0');
+function dt(x){x=(x||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(x))return x;const m=x.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);return m?m[3]+'-'+pad(m[2])+'-'+pad(m[1]):''}
+function rd(f){if(!f)return;f.text().then(t=>{imp=parse(t).slice(1).filter(r=>r[0]&&r[0].trim()).map(r=>({item:r[0].trim(),cat:(r[1]||'').trim()||'Lain-lain',qty:+r[2]||1,price:num(r[3]),notes:(r[4]||'').trim(),link:(r[5]||'').trim(),tgl:dt(r[6]),unit:(r[7]||'').trim()||'pcs'}));if(!imp.length)toast('Tidak ada baris terbaca');drawPage()})}
+function doImp(){commit(imp);toast(imp.length+' item diimpor');imp=[];importing=false;drawPage()}
+function tpl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFFItem;Kategori;Qty;Harga satuan;Merk/Catatan;Link/Tempat;Tanggal rencana;Satuan\nMukena;Alat shalat;1;250000;Tazbiya;tiktokshop;2026-11-15;pcs\nSunscreen;Skincare;1;70000;Facetology;Tiktokshop;;pcs\n'],{type:'text/csv'}));a.download='template-import-seserahan.csv';a.click()}
+function openEdit(n,scrollReal){const x=items.find(i=>i.no===n);if(!x)return;
+ const L=(l,i,v,t,a)=>`<label>${l}</label><input id="${i}" type="${t||'search'}" value="${String(v==null?'':v).replace(/"/g,'&quot;')}" ${a||''}>`;
+ const m=document.createElement('div');m.id='md';m.onclick=ev=>{if(ev.target===m)closeEdit()};
+ const b='padding:13px;border-radius:10px;font:600 15px Figtree,sans-serif;';
+ m.innerHTML=`<div class="mc"><h3>Edit item</h3><div class="sec">RENCANA</div>
+ ${L('Nama item','e_i',x.item)}${L('Kategori','e_c',x.cat,'search','list="cl2"')}<datalist id="cl2">${[...new Set(items.map(y=>y.cat))].map(c=>`<option value="${c}">`).join('')}</datalist>
+ <div class="ex"><div>${L('Qty','e_q',x.qty,'number')}</div><div>${L('Satuan','e_u',x.unit||'pcs')}</div></div>
+ ${L('Harga satuan (Rp)','e_p',x.price,'number')}${L('Merk / catatan rencana','e_n',x.notes)}${L('Link / tempat beli (rencana)','e_l',x.link)}
+ <hr><div class="sec">REALISASI</div>
+ <label style="display:flex;gap:10px;align-items:center;color:var(--ink);font-size:15px;margin-top:14px"><input id="e_d" type="checkbox" ${x.done?'checked':''} style="width:22px;height:22px;accent-color:var(--sage)">Sudah dibeli</label>
+ ${L('Tanggal rencana / tanggal beli','e_t',x.tgl,'date')}${L('Harga realisasi total (Rp)','e_r',x.real||'','number','placeholder="'+x.total+'"')}${L('Merk / barang yang dibeli','e_b',x.rbrand||'','search')}
+ <div class="grid" style="margin-top:20px"><button onclick="closeEdit()" style="${b}border:0;background:#eee;color:var(--ink)">Batal</button><button onclick="saveEdit(${n})" style="${b}border:0;background:var(--wine);color:#fff">Simpan</button></div></div>`;
+ document.body.appendChild(m);
+ if(scrollReal){const el=$('#e_b');if(el){el.scrollIntoView({block:'center'});setTimeout(()=>el.focus(),150)}}}
+function closeEdit(){const m=$('#md');if(m)m.remove()}
+function saveEdit(n){const x=items.find(i=>i.no===n),g=i=>$('#'+i).value.trim(),price=+g('e_p'),item=g('e_i');
+ if(!item||!price){toast('Isi nama item dan harga');return}
+ Object.assign(x,{item,cat:g('e_c')||'Lain-lain',qty:+g('e_q')||1,unit:g('e_u')||'pcs',price,notes:g('e_n'),link:g('e_l'),tgl:g('e_t'),done:$('#e_d').checked,real:+g('e_r')||0,rbrand:g('e_b')});
+ x.total=x.price*x.qty;if(x.done){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total}
+ closeEdit();localStorage[D]=JSON.stringify(items);
+ if(localStorage[K]){queue({action:'edit',no:n,item:x.item,cat:x.cat,qty:x.qty,unit:x.unit,price:x.price,notes:x.notes,link:x.link});queue({no:n,done:x.done,tgl:x.tgl,real:x.real,rbrand:x.rbrand})}
+ drawPage();toast('Perubahan disimpan')}
+function del(n){const x=items.find(i=>i.no===n);if(!confirm('Hapus "'+x.item+'"?'))return;
+ items=items.filter(i=>i.no!==n);open=null;localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({action:'delete',no:n});drawPage();toast('Item dihapus')}
+function tg(n,v){const x=items.find(i=>i.no===n);x.done=v;
+ if(v){x.tgl=x.tgl||new Date().toISOString().slice(0,10);x.real=x.real||x.total;save(x);open=n;drawPage();if(!x.rbrand)openEdit(n,true)}else{save(x);drawPage()}}
+function up(n,k,v){const x=items.find(i=>i.no===n);x[k]=v;if(k==='real'&&!v)x.real=0;save(x);drawPage();toast('Realisasi disimpan')}
+
+window.drawPage=function(){
+  const t=tot();
+  $('#sub').textContent=t.dn+' dari '+t.n+' item';
+  if(!localStorage[K]&&!demo){ $('#m').innerHTML=welcomeHTML(); return; }
+  $('#m').innerHTML=list();
+};
+</script>
+</body></html>
