@@ -16,5 +16,10 @@
     {"src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
     {"src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ],
+  "shortcuts": [
+    {"name": "Daftar", "url": "./daftar.html", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]},
+    {"name": "Grafik", "url": "./grafik.html", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]},
+    {"name": "Rencana", "url": "./planning.html", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]}
+  ],
   "categories": ["productivity", "lifestyle"]
 }
