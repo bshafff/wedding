@@ -1,5 +1,5 @@
 // ===== Shared config =====
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyIncsn5kBQD0pSwmNKGCA5aVYgdMCuV1uonXteOzP4qGeOEokVC1Sztvh-MWXKr4_0/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxN1PkSVO8RiSsZ7s5pVRg-yaV7m-by5xASEo0xNJ91owy7jaAVXH1ndKCeapZsBW1K/exec';
 const $=s=>document.querySelector(s);
 const R=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const K='sr_url',D='sr_data';
