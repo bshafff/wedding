@@ -1,0 +1,37 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json">
+<title>Grafik · Seserahan</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header>
+  <div class="hbtns"><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()">Sync</button><button onclick="manualUpdate()">🔄</button></div>
+  <h1>Grafik & Analisa</h1>
+  <small id="sub"></small><small id="sy"></small>
+  <div><span id="cn" class="badge"></span></div>
+</header>
+<div id="st"></div>
+<main id="m"></main>
+<nav></nav>
+<script src="app.js"></script>
+<script>
+renderNav('grafik');
+function donut(parts){const s=parts.reduce((a,p)=>a+p.v,0)||1;let o=0;const r=52,c=2*Math.PI*r;
+ return`<svg viewBox="0 0 140 140" width="150"><g transform="rotate(-90 70 70)">${parts.map((p,i)=>{const l=p.v/s*c,e=`<circle cx="70" cy="70" r="${r}" fill="none" stroke="${COL[i%8]}" stroke-width="22" stroke-dasharray="${l} ${c-l}" stroke-dashoffset="${-o}"/>`;o+=l;return e}).join('')}</g></svg>`}
+function charts(t){
+ const cats={};items.forEach(x=>{const c=cats[x.cat]=cats[x.cat]||{b:0,r:0,n:0,d:0};c.b+=x.total;c.n++;if(x.done){c.r+=x.real||x.total;c.d++}});
+ const cl=Object.entries(cats).sort((a,b)=>b[1].b-a[1].b);
+ const mo={};items.filter(x=>x.done&&x.tgl).forEach(x=>{const k=x.tgl.slice(0,7);mo[k]=(mo[k]||0)+(x.real||x.total)});
+ const ml=Object.entries(mo).sort(),mx=Math.max(1,...ml.map(m=>m[1]));
+ return`<div class="card"><b>Porsi anggaran per kategori</b><div class="row" style="margin-top:8px">${donut(cl.map(c=>({v:c[1].b})))}<div>${cl.map((c,i)=>`<div class="leg"><b style="background:${COL[i%8]}"></b>${c[0]} ${(c[1].b/(t.b||1)*100).toFixed(0)}%</div>`).join('')}</div></div></div>
+ <div class="card"><b>Progres belanja per kategori</b>${cl.map(c=>`<div style="margin-top:10px"><div class="row"><span>${c[0]}</span><span class="mute">${c[1].d}/${c[1].n} · ${c[1].b?(c[1].r/c[1].b*100).toFixed(0):0}%</span></div><div class="bar"><i style="width:${Math.min(100,c[1].r/c[1].b*100)}%"></i></div></div>`).join('')}</div>
+ <div class="card"><b>Tren realisasi per bulan</b>${ml.length?`<div class="row" style="align-items:flex-end;height:130px;margin-top:10px">${ml.map(m=>`<div style="flex:1;text-align:center"><div class="mute" style="font-size:11px">${R(m[1]/1000)}rb</div><div style="background:var(--wine);height:${m[1]/mx*90}px;border-radius:4px 4px 0 0"></div><div class="mute">${m[0].slice(5)}/${m[0].slice(2,4)}</div></div>`).join('')}</div>`:'<p class="mute">Muncul setelah ada item dicentang dengan tanggal.</p>'}</div>`}
+window.drawPage=function(){
+  const t=tot();
+  $('#sub').textContent=t.dn+' dari '+t.n+' item · '+R(t.r);
+  if(!localStorage[K]&&!demo){ $('#m').innerHTML=welcomeHTML(); return; }
+  $('#m').innerHTML=charts(t);
+};
+</script>
+</body></html>
