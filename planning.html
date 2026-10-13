@@ -1,0 +1,103 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json">
+<title>Wedding Planning</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header>
+  <div class="hbtns"><button onclick="editInfo()">Edit</button><button onclick="resetPlan()">Reset</button></div>
+  <h1>Wedding Planning</h1>
+  <div class="couple" id="couple">Pramono & Anggi</div>
+  <small id="info"></small>
+</header>
+<div id="st"></div>
+<main id="m"></main>
+<nav></nav>
+<script src="app.js"></script>
+<script>
+renderNav('planning');
+const PK='sr_plan';
+const PLAN_DEFAULT={
+  info:{couple:'Pramono & Anggi', date:'2026-08-17', location:'Rumah CPW & Hotel Arus'},
+  sections:[
+    {t:'H-12 bulan', tasks:[
+      {id:'a1',cat:'Persiapan',title:'Diskusi & Perencanaan Awal'},
+      {id:'a2',cat:'Budgeting',title:'Menyusun anggaran pernikahan'},
+      {id:'a3',cat:'Budgeting',title:'Compare semua vendor'}
+    ]},
+    {t:'H-10 bulan', tasks:[
+      {id:'b1',cat:'Lamaran',title:'Persiapan acara lamaran'},
+      {id:'b2',cat:'Vendor',title:'Booking vendor'}
+    ]},
+    {t:'H-8 bulan', tasks:[
+      {id:'c1',cat:'Lamaran',title:'Acara lamaran'},
+      {id:'c2',cat:'Vendor',title:'List dan contact vendor'},
+      {id:'c3',cat:'Dokumen',title:'Mengurus dokumen pernikahan (KTP, KK, akta, dll)'}
+    ]},
+    {t:'H-6 bulan', tasks:[
+      {id:'d1',cat:'Vendor',title:'Menentukan pilihan vendor'},
+      {id:'d2',cat:'Undangan',title:'Desain & cetak undangan'},
+      {id:'d3',cat:'Entertainment',title:'Booking entertainment & souvenir'},
+      {id:'d4',cat:'Dokumentasi',title:'Booking foto/video'},
+      {id:'d5',cat:'Prewedding',title:'Prewedding, seserahan & MUA'},
+      {id:'d6',cat:'Fitting',title:'Fitting baju & food tasting'},
+      {id:'d7',cat:'Cincin',title:'Cincin'},
+      {id:'d8',cat:'Mahar',title:'Mahar'},
+      {id:'d9',cat:'Seserahan',title:'Seserahan'},
+      {id:'d10',cat:'Admin',title:'Administrasi'},
+      {id:'d11',cat:'Final',title:'Finalisasi & kirim undangan'}
+    ]},
+    {t:'H-4 bulan', tasks:[
+      {id:'e1',cat:'Diri',title:'Menyiapkan diri & kesehatan'}
+    ]},
+    {t:'H-3 bulan', tasks:[
+      {id:'f1',cat:'Diri',title:'Persiapan akhir & gladi resik'}
+    ]}
+  ]
+};
+function loadPlan(){
+  try{ return JSON.parse(localStorage[PK]||'null') || JSON.parse(JSON.stringify(PLAN_DEFAULT)); }
+  catch(e){ return JSON.parse(JSON.stringify(PLAN_DEFAULT)); }
+}
+function savePlan(p){ localStorage[PK]=JSON.stringify(p); drawPage(); }
+function resetPlan(){ if(!confirm('Reset semua checklist?'))return; localStorage.removeItem(PK); drawPage(); toast('Checklist direset'); }
+function editInfo(){
+  const p=loadPlan();
+  const c=prompt('Nama pasangan:',p.info.couple); if(c===null)return;
+  const d=prompt('Tanggal (yyyy-mm-dd):',p.info.date); if(d===null)return;
+  const l=prompt('Lokasi:',p.info.location); if(l===null)return;
+  p.info={couple:c||p.info.couple,date:d||p.info.date,location:l||p.info.location};
+  savePlan(p);
+}
+function toggleTask(id){
+  const p=loadPlan();
+  for(const s of p.sections) for(const t of s.tasks) if(t.id===id) t.done=!t.done;
+  savePlan(p);
+}
+window.drawPage=function(){
+  const p=loadPlan();
+  $('#couple').textContent=p.info.couple||'';
+  const fd=s=>s?new Date(s+'T00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'-';
+  $('#info').textContent=fd(p.info.date)+' · '+(p.info.location||'-');
+  const all=p.sections.flatMap(s=>s.tasks);
+  const done=all.filter(t=>t.done).length;
+  const pct=all.length?done/all.length*100:0;
+  $('#m').innerHTML=`
+    <div class="card">
+      <div class="row"><b>Progres persiapan</b><span class="mute">${done}/${all.length}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="mute">${pct.toFixed(0)}% selesai</div>
+    </div>
+    ${p.sections.map(s=>{
+      const sd=s.tasks.filter(t=>t.done).length;
+      return`<div class="plan-sec"><h3>${s.t} <span class="mute" style="font-size:12px;font-weight:400">· ${sd}/${s.tasks.length}</span></h3>
+      ${s.tasks.map(t=>`<div class="plan-task ${t.done?'done':''}">
+        <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}')">
+        <div class="t"><div class="cat">${t.cat}</div><span>${t.title}</span></div>
+      </div>`).join('')}</div>`;
+    }).join('')}
+    <div class="mute" style="text-align:center;margin-top:14px">Data checklist tersimpan lokal di HP ini.</div>`;
+};
+</script>
+</body></html>
