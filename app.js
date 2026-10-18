@@ -1,5 +1,5 @@
 // ===== Shared config =====
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbxN1PkSVO8RiSsZ7s5pVRg-yaV7m-by5xASEo0xNJ91owy7jaAVXH1ndKCeapZsBW1K/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbw3SjYaezjlOSwrkSR5J19UhZf1UYApnx3-6RBjDFse0eBef3URvho_tEJw7yDjcW7x/exec';
 const $=s=>document.querySelector(s);
 const R=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const K='sr_url',D='sr_data';
@@ -109,9 +109,15 @@ async function manualUpdate(){
   toast('Versi baru tersedia');
 }
 
-// ===== Nav =====
+// Ganti bagian function renderNav menjadi ini:
 function renderNav(active){
-  const items=[['home','./','🏠','Home'],['daftar','daftar.html','📋','Daftar'],['grafik','grafik.html','📊','Grafik'],['planning','planning.html','💍','Rencana']];
+  const items=[
+    ['home','./','🏠','Home'],
+    ['daftar','daftar.html','📋','Daftar'],
+    ['grafik','grafik.html','📊','Grafik'],
+    ['planning','planning.html','💍','Rencana'],
+    ['board','board.html','💡','Board']
+  ];
   const nav=document.querySelector('nav'); if(!nav)return;
   nav.innerHTML=items.map(x=>`<button class="${active===x[0]?'on':''}" onclick="location.href='${x[1]}'"><div class="ic">${x[2]}</div>${x[3]}</button>`).join('');
 }
