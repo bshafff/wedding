@@ -1,0 +1,259 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json">
+<title>Wedding Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+button{cursor:pointer;touch-action:manipulation}
+</style>
+</head><body>
+<header>
+  <div class="hbtns">
+    <button onclick="toast('Menyinkronkan...');sync()">Sync</button>
+    <button onclick="manualUpdate()">🔄</button>
+  </div>
+  <h1>Wedding Board</h1>
+  <small>Inspirasi & konsep</small>
+  <div><span id="cn" class="badge"></span></div>
+</header>
+<div id="st"></div>
+<main id="m"></main>
+<nav></nav>
+<script src="app.js"></script>
+<script>
+renderNav('board');
+const BK='sr_board';
+
+function uid(){return Math.random().toString(36).slice(2,9)}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function loadBoardLocal(){
+  try{
+    const j=JSON.parse(localStorage[BK]||'null');
+    if(!j||!Array.isArray(j.sections)) return {sections:[]};
+    return j;
+  }catch(e){ return {sections:[]}; }
+}
+async function loadBoardRemote(){
+  const u=localStorage[K]; if(!u) return null;
+  try{
+    const r=await fetch(u+'?type=board&t='+Date.now());
+    const txt=await r.text();
+    if(!txt || !txt.trim() || txt.trim()==='{}') return null;
+    return JSON.parse(txt);
+  }catch(e){ return null; }
+}
+async function initBoard(){
+  const remote=await loadBoardRemote();
+  if(remote) localStorage[BK]=JSON.stringify(remote);
+  drawPage();
+}
+function saveBoard(p){
+  localStorage[BK]=JSON.stringify(p);
+  if(localStorage[K]) queue({action:'boardSave', data:p});
+  drawPage();
+}
+
+// ===== FORM MODAL =====
+function formModal(title, fields, onSave){
+  const m=document.createElement('div'); m.id='md';
+  m.onclick=ev=>{ if(ev.target===m) m.remove(); };
+  m.innerHTML='<div class="mc"><h3>'+esc(title)+'</h3>'+
+    fields.map(f=>{
+      if(f.type==='textarea') return '<label>'+esc(f.label)+'</label><textarea id="fm_'+f.key+'" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;min-height:80px">'+esc(f.value||'')+'</textarea>';
+      if(f.type==='file') return '<label>'+esc(f.label)+'</label><input id="fm_'+f.key+'" type="file" accept="image/*" style="display:block;margin-bottom:10px">';
+      return '<label>'+esc(f.label)+'</label><input id="fm_'+f.key+'" type="'+(f.type||'text')+'" value="'+esc(f.value||'')+'" placeholder="'+esc(f.placeholder||'')+'">';
+    }).join('')+
+    '<div class="grid" style="margin-top:20px"><button data-act="form-cancel" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button data-act="form-save" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan</button></div></div>';
+  m._fields=fields; m._onSave=onSave; document.body.appendChild(m);
+}
+function confirmModal(title, message, onYes){
+  const m=document.createElement('div'); m.id='md';
+  m.onclick=ev=>{ if(ev.target===m) m.remove(); };
+  m.innerHTML='<div class="mc"><h3>'+esc(title)+'</h3><p class="mute" style="margin:14px 0">'+esc(message)+'</p>'+
+    '<div class="grid" style="margin-top:20px"><button data-act="cf-no" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button data-act="cf-yes" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Ya, lanjut</button></div></div>';
+  m._onYes=onYes; document.body.appendChild(m);
+}
+
+// ===== KOMPRESI & UPLOAD GAMBAR =====
+async function compressImage(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        const MAX=800;
+        let w=img.width, h=img.height;
+        if(w>MAX){ h=h*(MAX/w); w=MAX; }
+        if(h>MAX){ w=w*(MAX/h); h=MAX; }
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',0.7));
+      };
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadToDrive(dataUrl, filename){
+  const u=localStorage[K];
+  if(!u) throw new Error('Belum tersambung ke Google Sheet');
+  const res=await fetch(u,{
+    method:'POST', headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'uploadImage', base64:dataUrl, filename, mime:'image/jpeg'})
+  });
+  const j=await res.json();
+  if(j.error) throw new Error(j.error);
+  return j.url;
+}
+
+// ===== AKSI =====
+function addSection(){
+  formModal('Tambah Kategori Board',[
+    {key:'label', label:'Nama Kategori', value:'', placeholder:'Dekorasi, Seserahan, Venue, dll'}
+  ], vals=>{
+    if(!vals.label) return toast('Isi nama kategori');
+    const p=loadBoardLocal();
+    p.sections.push({id:uid(), label:vals.label, items:[]});
+    saveBoard(p); toast('Kategori ditambahkan');
+  });
+}
+function editSection(secId){
+  const p=loadBoardLocal(); const s=p.sections.find(x=>x.id===secId); if(!s)return;
+  formModal('Edit Kategori',[{key:'label', label:'Nama Kategori', value:s.label}],vals=>{
+    if(!vals.label) return toast('Isi nama kategori');
+    s.label=vals.label; saveBoard(p);
+  });
+}
+function delSection(secId){
+  confirmModal('Hapus Kategori?','Semua gambar di dalamnya akan dihapus dari daftar ini (file di Drive tetap aman).',()=>{
+    const p=loadBoardLocal(); p.sections=p.sections.filter(x=>x.id!==secId); saveBoard(p); toast('Dihapus');
+  });
+}
+async function openItemModal(secId, itemId){
+  const p=loadBoardLocal(); const sec=p.sections.find(x=>x.id===secId); if(!sec)return;
+  const isNew=!itemId;
+  const it=isNew ? {title:'',note:'',img:''} : (sec.items.find(x=>x.id===itemId)||{title:'',note:'',img:''});
+  
+  const m=document.createElement('div'); m.id='md';
+  m.onclick=ev=>{ if(ev.target===m) m.remove(); };
+  m.innerHTML='<div class="mc"><h3>'+(isNew?'Tambah':'Edit')+' Inspirasi</h3>'+
+    '<div class="sec">KATEGORI: '+esc(sec.label)+'</div>'+
+    '<label>Judul</label><input id="b_t" type="text" value="'+esc(it.title)+'" placeholder="Contoh: Bunga rustic">'+
+    '<label>Catatan</label><textarea id="b_n" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;min-height:80px" placeholder="Detail konsep, warna, vendor...">'+esc(it.note)+'</textarea>'+
+    '<label>Ganti Foto (kosongkan jika tidak diubah)</label><input id="b_f" type="file" accept="image/*" style="display:block;margin-bottom:10px">'+
+    (it.img?'<img src="'+esc(it.img)+'" style="width:100%;max-height:200px;object-fit:contain;background:#eee;border-radius:8px;margin-bottom:10px">':'')+
+    '<div class="grid" style="margin-top:20px"><button id="b_cancel" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button id="b_save" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan</button></div></div>';
+  document.body.appendChild(m);
+
+  document.getElementById('b_cancel').onclick=()=>m.remove();
+  document.getElementById('b_save').onclick=async()=>{
+    const title=document.getElementById('b_t').value.trim();
+    const note=document.getElementById('b_n').value.trim();
+    const file=document.getElementById('b_f').files[0];
+    if(!title) return toast('Isi judul');
+    
+    const btn=document.getElementById('b_save'); btn.textContent='Menyimpan...'; btn.disabled=true;
+
+    try{
+      let imgUrl=it.img;
+      if(file){
+        const dataUrl=await compressImage(file);
+        imgUrl=await uploadToDrive(dataUrl, 'board_'+Date.now()+'.jpg');
+      }
+      const p2=loadBoardLocal();
+      const sec2=p2.sections.find(x=>x.id===secId);
+      if(itemId){
+        const it2=sec2.items.find(x=>x.id===itemId);
+        it2.title=title; it2.note=note; it2.img=imgUrl;
+      } else {
+        sec2.items.push({id:uid(), title, note, img:imgUrl});
+      }
+      saveBoard(p2);
+      m.remove(); toast('Tersimpan');
+    }catch(err){
+      toast('Gagal upload: '+err.message);
+      btn.textContent='Simpan'; btn.disabled=false;
+    }
+  };
+}
+function delItem(secId,itemId){
+  confirmModal('Hapus Inspirasi?','Item ini akan dihapus dari board.',()=>{
+    const p=loadBoardLocal(); const sec=p.sections.find(x=>x.id===secId); if(!sec)return;
+    sec.items=sec.items.filter(x=>x.id!==itemId); saveBoard(p); toast('Dihapus');
+  });
+}
+
+// ===== EVENT DELEGATION =====
+document.body.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b)return;
+  const act=b.dataset.act;
+  if(act==='form-cancel'||act==='cf-no'){ const m=document.getElementById('md'); if(m) m.remove(); return; }
+  if(act==='form-save'){
+    const m=document.getElementById('md'); if(!m)return;
+    const vals={};
+    m._fields.forEach(f=>{ const el=document.getElementById('fm_'+f.key); vals[f.key]=el?el.value.trim():''; });
+    m._onSave(vals); m.remove(); return;
+  }
+  if(act==='cf-yes'){
+    const m=document.getElementById('md'); if(!m)return;
+    const cb=m._onYes; m.remove(); if(cb) cb(); return;
+  }
+  const sec=b.dataset.sec, item=b.dataset.item;
+  if(act==='sec-add') return addSection();
+  if(act==='sec-edit') return editSection(sec);
+  if(act==='sec-del') return delSection(sec);
+  if(act==='item-add') return openItemModal(sec);
+  if(act==='item-edit') return openItemModal(sec,item);
+  if(act==='item-del') return delItem(sec,item);
+});
+
+const _origSync=window.sync;
+window.sync=async function(){
+  await _origSync();
+  const r=await loadBoardRemote();
+  if(r){ localStorage[BK]=JSON.stringify(r); drawPage(); toast('Board tersinkron'); }
+};
+
+window.drawPage=function(){
+  const p=loadBoardLocal();
+  let html='<button data-act="sec-add" style="padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;width:100%;border:1px dashed var(--wine);background:none;color:var(--wine);margin-bottom:16px">+ Tambah Kategori</button>';
+  
+  if(!p.sections.length) html+='<p class="mute" style="text-align:center">Belum ada kategori. Tambah "Dekorasi", "Seserahan", dll.</p>';
+
+  p.sections.forEach(s=>{
+    html+='<div class="board-sec">';
+    html+='<h3>'+esc(s.label)+'</h3>';
+    html+='<div style="display:flex;gap:6px;margin-bottom:10px">';
+    html+='<button data-act="sec-edit" data-sec="'+s.id+'" style="padding:4px 10px;border:1px solid var(--wine);background:none;color:var(--wine);border-radius:8px;font-size:12px">✏️ Kategori</button>';
+    html+='<button data-act="sec-del" data-sec="'+s.id+'" style="padding:4px 10px;border:1px solid var(--line);background:none;color:#a33;border-radius:8px;font-size:12px">🗑️</button>';
+    html+='</div>';
+    
+    html+='<div class="board-grid">';
+    s.items.forEach(it=>{
+      html+='<div class="board-card">'+
+        (it.img?'<img class="img" src="'+esc(it.img)+'" loading="lazy">':'<div class="img empty">📷</div>')+
+        '<div class="body">'+
+          '<b>'+esc(it.title)+'</b>'+
+          (it.note?'<small>'+esc(it.note)+'</small>':'')+
+        '</div>'+
+        '<button class="del-btn" data-act="item-del" data-sec="'+s.id+'" data-item="'+it.id+'">✕</button>'+
+        '<div style="display:flex;border-top:1px solid var(--line)">'+
+          '<button data-act="item-edit" data-sec="'+s.id+'" data-item="'+it.id+'" style="flex:1;padding:8px;border:0;background:none;font:600 12px Figtree,sans-serif;color:var(--wine)">Edit</button>'+
+        '</div>'+
+      '</div>';
+    });
+    html+='<div class="board-card" style="display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:100px" data-act="item-add" data-sec="'+s.id+'"><div style="font-size:24px;color:#ccc">+</div></div>';
+    html+='</div></div>';
+  });
+  
+  html+='<div class="mute" style="text-align:center;margin-top:14px">Foto disimpan di Google Drive kamu.</div>';
+  document.getElementById('m').innerHTML=html;
+};
+
+initBoard();
+</script>
+</body></html>
