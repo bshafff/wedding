@@ -1,6 +1,6 @@
-// Seserahan Tracker SW v8 - cache multi-page
-const CACHE_NAME='seserahan-v8';
-const urlsToCache=['./','./index.html','./daftar.html','./grafik.html','./planning.html','./board.html','./style.css','./app.js','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+// Seserahan Tracker SW v9 - tambah diet
+const CACHE_NAME='seserahan-v9';
+const urlsToCache=['./','./index.html','./daftar.html','./grafik.html','./planning.html','./board.html','./diet.html','./style.css','./app.js','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{self.skipWaiting();
  e.waitUntil(caches.open(CACHE_NAME).then(c=>Promise.allSettled(urlsToCache.map(u=>c.add(u).catch(err=>console.warn('Gagal cache:',u,err))))))});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE_NAME).map(n=>caches.delete(n)))).then(()=>self.clients.claim())));
