@@ -45,8 +45,12 @@ async function loadBoardRemote(){
   }catch(e){ return null; }
 }
 async function initBoard(){
+  // Jangan timpa local kalau masih ada antrean boardSave
+  if(q_().some(x=>x.action==='boardSave')){ drawPage(); return; }
   const remote=await loadBoardRemote();
-  if(remote) localStorage[BK]=JSON.stringify(remote);
+  if(remote && !q_().some(x=>x.action==='boardSave')){
+    localStorage[BK]=JSON.stringify(remote);
+  }
   drawPage();
 }
 function saveBoard(p){
@@ -166,9 +170,11 @@ async function openItemModal(secId, itemId){
       }
       const p2=loadBoardLocal();
       const sec2=p2.sections.find(x=>x.id===secId);
+      // Guard: kategori bisa saja dihapus saat modal terbuka
+      if(!sec2){ toast('Kategori sudah dihapus'); m.remove(); return; }
       if(itemId){
         const it2=sec2.items.find(x=>x.id===itemId);
-        it2.title=title; it2.note=note; it2.img=imgUrl;
+        if(it2){ it2.title=title; it2.note=note; it2.img=imgUrl; }
       } else {
         sec2.items.push({id:uid(), title, note, img:imgUrl});
       }
@@ -214,6 +220,12 @@ document.body.addEventListener('click',e=>{
 const _origSync=window.sync;
 window.sync=async function(){
   await _origSync();
+  // Jangan timpa local selama masih ada boardSave yang belum terkirim
+  if(q_().some(x=>x.action==='boardSave')){
+    drawPage();
+    toast('Board menunggu sinkron');
+    return;
+  }
   const r=await loadBoardRemote();
   if(r){ localStorage[BK]=JSON.stringify(r); drawPage(); toast('Board tersinkron'); }
 };
