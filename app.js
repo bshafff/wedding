@@ -28,22 +28,33 @@ async function sync(){ await flush(); if(!q_().length) await load(); }
 
 function q_(){return JSON.parse(localStorage.sr_q||'[]')}
 function setq(a){localStorage.sr_q=JSON.stringify(a);stat()}
-let busy=false;
+let flushPromise=null;
 async function flush(){
   const u=localStorage[K];
-  if(!u||busy||!navigator.onLine)return;
-  busy=true;
-  try{
-    while(true){
-      const a=q_(); if(!a.length)break;
-      try{
-        const res=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(a[0])});
-        const txt=await res.text();
-        if(txt.trim()!=='ok'){ console.warn('Server tidak balas ok:',res.status,txt.slice(0,200)); toast('Server belum simpan, coba lagi nanti'); break; }
-        const cur=q_();cur.shift();setq(cur);
-      }catch(e){ console.warn('Kirim gagal:',e); toast('Belum tersambung, perubahan menunggu'); break; }
-    }
-  } finally { busy=false }
+  if(!u||!navigator.onLine)return;
+  if(flushPromise)return flushPromise;
+  flushPromise=(async()=>{
+    try{
+      while(true){
+        const a=q_(); if(!a.length)break;
+        try{
+          const res=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(a[0])});
+          const txt=await res.text();
+          if(txt.trim()!=='ok'){
+            console.warn('Server tidak balas ok:',res.status,txt.slice(0,200));
+            toast('Server belum simpan, coba lagi nanti');
+            break;
+          }
+          const cur=q_();cur.shift();setq(cur);
+        }catch(e){
+          console.warn('Kirim gagal:',e);
+          toast('Belum tersambung, perubahan menunggu');
+          break;
+        }
+      }
+    } finally { flushPromise=null; }
+  })();
+  return flushPromise;
 }
 function queue(p){ const a=q_();a.push(p);setq(a); flush().then(()=>{ if(!q_().length) load() }); }
 
@@ -109,13 +120,13 @@ async function manualUpdate(){
   toast('Versi baru tersedia');
 }
 
-// Ganti bagian function renderNav menjadi ini:
 function renderNav(active){
   const items=[
     ['home','./','🏠','Home'],
     ['daftar','daftar.html','📋','Daftar'],
     ['grafik','grafik.html','📊','Grafik'],
     ['planning','planning.html','💍','Rencana'],
+    ['diet','diet.html','🥗','Diet'],
     ['board','board.html','💡','Board']
   ];
   const nav=document.querySelector('nav'); if(!nav)return;
