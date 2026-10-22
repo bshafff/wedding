@@ -19,7 +19,8 @@
   "shortcuts": [
     {"name": "Daftar", "url": "./daftar.html", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]},
     {"name": "Grafik", "url": "./grafik.html", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]},
-    {"name": "Rencana", "url": "./planning.html", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]}
+    {"name": "Rencana", "url": "./planning.html", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]},
+    {"name": "Diet", "url": "./diet.html", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]}
   ],
   "categories": ["productivity", "lifestyle"]
 }
