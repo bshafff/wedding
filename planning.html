@@ -36,7 +36,7 @@ renderNav('planning');
 
 const PK='sr_plan';
 const PLAN_DEFAULT={
-  info:{couple:'Pramono & Anggi', date:'2026-08-17', location:'Rumah CPW & Hotel Arus'},
+  info:{couple:'Shaffan Burhan dan Annisa Istiqomah Sugandi', date:'2027-04-14', location:'Ciwidey'},
   sections:[
     {id:'s1', label:'H-12 bulan', tasks:[
       {id:'t1', cat:'Persiapan', title:'Diskusi & Perencanaan Awal', done:false},
@@ -73,7 +73,7 @@ const PLAN_DEFAULT={
     ]}
   ]
 };
-
+  
 function uid(){return Math.random().toString(36).slice(2,9)}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function normalize(j){
