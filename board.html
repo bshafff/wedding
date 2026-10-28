@@ -45,7 +45,6 @@ async function loadBoardRemote(){
   }catch(e){ return null; }
 }
 async function initBoard(){
-  // Jangan timpa local kalau masih ada antrean boardSave
   if(q_().some(x=>x.action==='boardSave')){ drawPage(); return; }
   const remote=await loadBoardRemote();
   if(remote && !q_().some(x=>x.action==='boardSave')){
@@ -59,7 +58,6 @@ function saveBoard(p){
   drawPage();
 }
 
-// ===== FORM MODAL =====
 function formModal(title, fields, onSave){
   const m=document.createElement('div'); m.id='md';
   m.onclick=ev=>{ if(ev.target===m) m.remove(); };
@@ -80,7 +78,6 @@ function confirmModal(title, message, onYes){
   m._onYes=onYes; document.body.appendChild(m);
 }
 
-// ===== KOMPRESI & UPLOAD GAMBAR =====
 async function compressImage(file){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -114,7 +111,6 @@ async function uploadToDrive(dataUrl, filename){
   return j.url;
 }
 
-// ===== AKSI =====
 function addSection(){
   formModal('Tambah Kategori Board',[
     {key:'label', label:'Nama Kategori', value:'', placeholder:'Dekorasi, Seserahan, Venue, dll'}
@@ -137,26 +133,50 @@ function delSection(secId){
     const p=loadBoardLocal(); p.sections=p.sections.filter(x=>x.id!==secId); saveBoard(p); toast('Dihapus');
   });
 }
+
 async function openItemModal(secId, itemId){
   const p=loadBoardLocal(); const sec=p.sections.find(x=>x.id===secId); if(!sec)return;
   const isNew=!itemId;
-  const it=isNew ? {title:'',note:'',img:''} : (sec.items.find(x=>x.id===itemId)||{title:'',note:'',img:''});
+  const it=isNew ? {title:'',note:'',img:'',tiktok:''} : (sec.items.find(x=>x.id===itemId)||{title:'',note:'',img:'',tiktok:''});
   
   const m=document.createElement('div'); m.id='md';
   m.onclick=ev=>{ if(ev.target===m) m.remove(); };
   m.innerHTML='<div class="mc"><h3>'+(isNew?'Tambah':'Edit')+' Inspirasi</h3>'+
     '<div class="sec">KATEGORI: '+esc(sec.label)+'</div>'+
+    
+    '<label>Link TikTok (Opsional)</label>'+
+    '<div style="display:flex;gap:8px">'+
+      '<input id="b_tk" type="url" value="'+esc(it.tiktok||'')+'" placeholder="https://vt.tiktok.com/..." style="flex:1">'+
+      '<button id="b_fetch" type="button" style="padding:0 12px;border:1px solid var(--wine);background:none;color:var(--wine);border-radius:8px;font:600 13px Figtree,sans-serif">Ambil</button>'+
+    '</div>'+
+
     '<label>Judul</label><input id="b_t" type="text" value="'+esc(it.title)+'" placeholder="Contoh: Bunga rustic">'+
-    '<label>Catatan</label><textarea id="b_n" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;min-height:80px" placeholder="Detail konsep, warna, vendor...">'+esc(it.note)+'</textarea>'+
+    '<label>Catatan / Konsep</label><textarea id="b_n" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;min-height:80px" placeholder="Tulis ide, warna, alur, dll...">'+esc(it.note)+'</textarea>'+
     '<label>Ganti Foto (kosongkan jika tidak diubah)</label><input id="b_f" type="file" accept="image/*" style="display:block;margin-bottom:10px">'+
     (it.img?'<img src="'+esc(it.img)+'" style="width:100%;max-height:200px;object-fit:contain;background:#eee;border-radius:8px;margin-bottom:10px">':'')+
     '<div class="grid" style="margin-top:20px"><button id="b_cancel" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button id="b_save" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan</button></div></div>';
   document.body.appendChild(m);
 
+  document.getElementById('b_fetch').onclick = async () => {
+    const tkUrl = document.getElementById('b_tk').value.trim();
+    if(!tkUrl) return toast('Masukkan link TikTok dulu');
+    const btn = document.getElementById('b_fetch'); btn.textContent='...';
+    try {
+      const res = await fetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent(tkUrl));
+      const data = await res.json();
+      if(data.title) document.getElementById('b_t').value = data.title;
+      toast('Info TikTok diambil');
+    } catch(e) {
+      toast('Gagal ambil info TikTok');
+    }
+    btn.textContent='Ambil';
+  };
+
   document.getElementById('b_cancel').onclick=()=>m.remove();
   document.getElementById('b_save').onclick=async()=>{
     const title=document.getElementById('b_t').value.trim();
     const note=document.getElementById('b_n').value.trim();
+    const tiktok=document.getElementById('b_tk').value.trim();
     const file=document.getElementById('b_f').files[0];
     if(!title) return toast('Isi judul');
     
@@ -170,13 +190,12 @@ async function openItemModal(secId, itemId){
       }
       const p2=loadBoardLocal();
       const sec2=p2.sections.find(x=>x.id===secId);
-      // Guard: kategori bisa saja dihapus saat modal terbuka
       if(!sec2){ toast('Kategori sudah dihapus'); m.remove(); return; }
       if(itemId){
         const it2=sec2.items.find(x=>x.id===itemId);
-        if(it2){ it2.title=title; it2.note=note; it2.img=imgUrl; }
+        if(it2){ it2.title=title; it2.note=note; it2.img=imgUrl; it2.tiktok=tiktok; }
       } else {
-        sec2.items.push({id:uid(), title, note, img:imgUrl});
+        sec2.items.push({id:uid(), title, note, img:imgUrl, tiktok});
       }
       saveBoard(p2);
       m.remove(); toast('Tersimpan');
@@ -186,6 +205,7 @@ async function openItemModal(secId, itemId){
     }
   };
 }
+
 function delItem(secId,itemId){
   confirmModal('Hapus Inspirasi?','Item ini akan dihapus dari board.',()=>{
     const p=loadBoardLocal(); const sec=p.sections.find(x=>x.id===secId); if(!sec)return;
@@ -193,7 +213,56 @@ function delItem(secId,itemId){
   });
 }
 
-// ===== EVENT DELEGATION =====
+// ===== FITUR AI RUNDOWN =====
+async function generateRundownAI() {
+  if(!localStorage[K]) return toast('Sambungkan ke Google Sheet dulu');
+  const p = loadBoardLocal();
+  if(!p.sections.length) return toast('Board masih kosong, isi inspirasi dulu');
+
+  let promptText = "Berikut adalah kumpulan inspirasi pernikahan kami dari berbagai video TikTok dan catatan pribadi:\n\n";
+  p.sections.forEach(s => {
+    promptText += `=== KATEGORI: ${s.label} ===\n`;
+    s.items.forEach(it => {
+      promptText += `- Referensi: ${it.title}\n`;
+      promptText += `  Link: ${it.tiktok || 'Tidak ada link'}\n`;
+      promptText += `  Konsep/Detail: ${it.note || 'Tidak ada catatan detail'}\n\n`;
+    });
+  });
+  promptText += "\nTolong susun semua ide di atas menjadi satu ALUR ACARA (RUNDOWN) PERNIKAHAN yang utuh dan berurutan dari awal hingga akhir. Gabungkan ide-ide dari video TikTok yang berbeda menjadi satu kesatuan acara yang harmonis.";
+
+  toast('AI sedang merangkai alur... (tunggu ± 10 detik)');
+  
+  try {
+    const loadingModal = document.createElement('div'); loadingModal.id = 'md_loading';
+    loadingModal.innerHTML = '<div style="position:fixed;inset:0;background:#0007;z-index:10000;display:flex;align-items:center;justify-content:center;color:#fff;font:600 16px Figtree,sans-serif">✨ AI sedang menyusun alur...</div>';
+    document.body.appendChild(loadingModal);
+
+    const res = await fetch(localStorage[K], {
+      method: 'POST', headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({action: 'generateAI', prompt: promptText})
+    });
+    const j = await res.json();
+    
+    loadingModal.remove();
+
+    if(j.error) throw new Error(j.error);
+    
+    const m = document.createElement('div'); m.id = 'md';
+    m.onclick = ev => { if(ev.target === m) m.remove(); };
+    m.innerHTML = `<div class="mc"><h3>✨ Alur & Rundown AI</h3>
+      <p class="mute" style="margin-bottom:12px">Dibuat berdasarkan gabungan semua video TikTok dan catatan di Board kamu.</p>
+      <div style="white-space:pre-wrap;font-size:14px;line-height:1.6;background:#faf6f2;padding:14px;border-radius:8px;border:1px solid var(--line);max-height:60vh;overflow-y:auto">${esc(j.result)}</div>
+      <button onclick="document.getElementById('md').remove()" style="width:100%;padding:14px;margin-top:16px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Tutup</button>
+    </div>`;
+    document.body.appendChild(m);
+    
+  } catch(err) {
+    const lm = document.getElementById('md_loading');
+    if(lm) lm.remove();
+    toast('Gagal generate AI: ' + err.message);
+  }
+}
+
 document.body.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b)return;
   const act=b.dataset.act;
@@ -220,7 +289,6 @@ document.body.addEventListener('click',e=>{
 const _origSync=window.sync;
 window.sync=async function(){
   await _origSync();
-  // Jangan timpa local selama masih ada boardSave yang belum terkirim
   if(q_().some(x=>x.action==='boardSave')){
     drawPage();
     toast('Board menunggu sinkron');
@@ -232,7 +300,11 @@ window.sync=async function(){
 
 window.drawPage=function(){
   const p=loadBoardLocal();
-  let html='<button data-act="sec-add" style="padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;width:100%;border:1px dashed var(--wine);background:none;color:var(--wine);margin-bottom:16px">+ Tambah Kategori</button>';
+  
+  let html='<div style="display:flex;gap:8px;margin-bottom:16px">'+
+  '<button data-act="sec-add" style="padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;flex:1;border:1px dashed var(--wine);background:none;color:var(--wine)">+ Tambah Kategori</button>'+
+  '<button onclick="generateRundownAI()" style="padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;flex:1;border:0;background:var(--gold);color:#fff">✨ Buat Rundown AI</button>'+
+  '</div>';
   
   if(!p.sections.length) html+='<p class="mute" style="text-align:center">Belum ada kategori. Tambah "Dekorasi", "Seserahan", dll.</p>';
 
