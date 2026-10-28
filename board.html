@@ -6,6 +6,15 @@
 <link rel="stylesheet" href="style.css">
 <style>
 button{cursor:pointer;touch-action:manipulation}
+/* Styling tambahan untuk hasil AI */
+.ai-content h1, .ai-content h2, .ai-content h3 { color: var(--wine); font-family: Fraunces, Georgia, serif; margin: 16px 0 8px; }
+.ai-content h1 { font-size: 22px; border-bottom: 2px solid var(--line); padding-bottom: 6px; }
+.ai-content h2 { font-size: 18px; }
+.ai-content h3 { font-size: 16px; }
+.ai-content p { margin-bottom: 10px; }
+.ai-content ul, .ai-content ol { margin: 10px 0 10px 20px; padding: 0; }
+.ai-content li { margin-bottom: 4px; }
+.ai-content strong { color: var(--ink); }
 </style>
 </head><body>
 <header>
@@ -213,6 +222,42 @@ function delItem(secId,itemId){
   });
 }
 
+// ===== FUNGSI FORMAT MARKDOWN KE HTML =====
+function md(str) {
+  if (!str) return '';
+  let s = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); // Escape base HTML
+  
+  // Headers
+  s = s.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+  s = s.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+  s = s.replace(/^# (.*)$/gm, '<h1>$1</h1>');
+  
+  // Bold & Italic
+  s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  
+  // Lists (Bullet & Numbered)
+  s = s.replace(/^\s*[-*]\s+(.*)$/gm, '<li>$1</li>');
+  s = s.replace(/^\s*\d+\.\s+(.*)$/gm, '<li>$1</li>');
+  
+  // Wrap consecutive <li> in <ul>
+  s = s.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+  // Cleanup double wraps if any
+  s = s.replace(/<\/ul>\s*<ul>/g, '');
+  
+  // Paragraf & Line breaks
+  s = s.replace(/\n\n/g, '<br><br>');
+  s = s.replace(/\n/g, '<br>');
+  
+  // Hapus <br> yang tidak perlu di sekitar header & list
+  s = s.replace(/<br>\s*(<h[1-3]>)/g, '$1');
+  s = s.replace(/(<\/h[1-3]>)\s*<br>/g, '$1');
+  s = s.replace(/<br>\s*(<ul>)/g, '$1');
+  s = s.replace(/(<\/ul>)\s*<br>/g, '$1');
+
+  return s;
+}
+
 // ===== FITUR AI RUNDOWN =====
 async function generateRundownAI() {
   if(!localStorage[K]) return toast('Sambungkan ke Google Sheet dulu');
@@ -251,7 +296,7 @@ async function generateRundownAI() {
     m.onclick = ev => { if(ev.target === m) m.remove(); };
     m.innerHTML = `<div class="mc"><h3>✨ Alur & Rundown AI</h3>
       <p class="mute" style="margin-bottom:12px">Dibuat berdasarkan gabungan semua video TikTok dan catatan di Board kamu.</p>
-      <div style="white-space:pre-wrap;font-size:14px;line-height:1.6;background:#faf6f2;padding:14px;border-radius:8px;border:1px solid var(--line);max-height:60vh;overflow-y:auto">${esc(j.result)}</div>
+      <div class="ai-content" style="font-size:14px;line-height:1.6;background:#faf6f2;padding:16px;border-radius:8px;border:1px solid var(--line);max-height:60vh;overflow-y:auto">${md(j.result)}</div>
       <button onclick="document.getElementById('md').remove()" style="width:100%;padding:14px;margin-top:16px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Tutup</button>
     </div>`;
     document.body.appendChild(m);
