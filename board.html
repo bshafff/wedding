@@ -10,6 +10,7 @@ button{cursor:pointer;touch-action:manipulation}
 </head><body>
 <header>
   <div class="hbtns">
+    <button onclick="forcePull()" title="Tarik data dari Sheet">⬇️ Tarik</button>
     <button onclick="toast('Menyinkronkan...');sync()">Sync</button>
     <button onclick="manualUpdate()">🔄</button>
   </div>
@@ -39,13 +40,12 @@ function loadBoardLocal(){
 async function loadBoardRemote(){
   const u=localStorage[K]; if(!u) return null;
   try{
-       const r=await fetch(u+'?type=board&t='+Date.now(), {cache: 'no-store'});
+    // Tambahan cache: 'no-store' agar tidak kena cache browser
+    const r=await fetch(u+'?type=board&t='+Date.now(), {cache: 'no-store'});
     const txt=await r.text();
-    // Cek jika kosong
     if(!txt || !txt.trim() || txt.trim()==='{}' || txt.trim()==='[]') return null;
     const j = JSON.parse(txt);
     
-    // 🛡️ TAMENG PENGAMAN: Jangan timpa data lokal jika format dari server salah
     if(!j || typeof j !== 'object' || !Array.isArray(j.sections)) {
       console.warn('Data dari server bukan format Board. Data lokal diamankan.');
       return null; 
@@ -55,13 +55,36 @@ async function loadBoardRemote(){
 }
 
 async function initBoard(){
+  // Coba kirim antrean dulu jika ada
+  if(q_().length > 0) {
+    await flush();
+  }
+  // Jika masih ada antrean boardSave setelah flush (berarti gagal), jangan timpa data lokal
   if(q_().some(x=>x.action==='boardSave')){ drawPage(); return; }
+  
   const remote=await loadBoardRemote();
-  if(remote && !q_().some(x=>x.action==='boardSave')){
+  if(remote){
     localStorage[BK]=JSON.stringify(remote);
   }
   drawPage();
 }
+
+// 🛡️ FUNGSI PENYELAMAT: Paksa Tarik Data dari Google Sheet
+async function forcePull(){
+  if(!confirm('Tarik data dari Google Sheet? Perubahan yang belum tersinkron di HP ini akan dihapus dan diganti dengan data dari Sheet.')) return;
+  toast('Menarik data dari Sheet...');
+  localStorage.removeItem('sr_q'); // Hapus antrean yang macet
+  localStorage.removeItem(BK); // Hapus data lokal HP
+  const remote = await loadBoardRemote();
+  if(remote){
+    localStorage[BK] = JSON.stringify(remote);
+    toast('Berhasil ditarik!');
+  } else {
+    toast('Sheet juga kosong atau gagal konek.');
+  }
+  drawPage();
+}
+
 function saveBoard(p){
   localStorage[BK]=JSON.stringify(p);
   if(localStorage[K]) queue({action:'boardSave', data:p});
@@ -252,7 +275,6 @@ async function generateRundownAI() {
       body: JSON.stringify({action: 'generateAI', prompt: promptText})
     });
     
-    // --- TAMENG PENGAMAN ERROR JSON ---
     const txt = await res.text();
     let j;
     try {
@@ -260,7 +282,6 @@ async function generateRundownAI() {
     } catch (e) {
       throw new Error("Apps Script belum di-Deploy ulang (New Version) atau Error.");
     }
-    // ----------------------------------
 
     loadingModal.remove();
 
@@ -310,7 +331,7 @@ window.sync=async function(){
   await _origSync();
   if(q_().some(x=>x.action==='boardSave')){
     drawPage();
-    toast('Board menunggu sinkron');
+    toast('Board menunggu sinkron (Gagal kirim ke Sheet)');
     return;
   }
   const r=await loadBoardRemote();
