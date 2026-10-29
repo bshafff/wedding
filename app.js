@@ -9,6 +9,18 @@ let lastSync='',items=[],demo=false;
 
 function toast(t,ms){const e=$('#st');if(!e)return;e.textContent=t;e.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(()=>e.style.display='none',ms||1800)}
 
+// ===== FUNGSI SEMBUNYIKAN TOMBOL SHEET =====
+function toggleSheetBtn() {
+  const btns = document.querySelectorAll('.hbtns button');
+  btns.forEach(btn => {
+    // Cari tombol yang memicu fungsi cfg() atau bertuliskan 'Sheet' / '⚙️'
+    if (btn.getAttribute('onclick') === 'cfg()' || btn.textContent.trim() === 'Sheet' || btn.textContent.trim() === '⚙️') {
+      // Jika localStorage[K] ada isinya (sudah tersambung), sembunyikan. Jika kosong, tampilkan.
+      btn.style.display = localStorage[K] ? 'none' : 'inline-block';
+    }
+  });
+}
+
 async function load(){
   const u=localStorage[K];
   if(!u){ demo=true; items=JSON.parse(localStorage[D]||'[]'); drawPage(); return; }
@@ -62,10 +74,12 @@ function stat(){
   const n=q_().length,e=$('#sy'),c=$('#cn');if(!e)return;
   if(c) c.textContent=navigator.onLine?'🟢 Online':'🔴 Offline · data tersimpan lokal';
   e.textContent=!localStorage[K]?'':n?' · '+n+' perubahan menunggu sinkron':lastSync?' · tersinkron '+lastSync+' · auto-sync aktif':'';
+  toggleSheetBtn(); // Panggil fungsi sembunyikan tombol di sini
 }
-function connect(){localStorage[K]=DEFAULT_URL;delete localStorage[D];items=[];toast('Menyambungkan...');sync()}
-function demoMode(){localStorage.removeItem(K);load()}
-function cfg(){const v=prompt('Tempel URL Web App Apps Script (…/exec). Kosongkan untuk mode demo:',localStorage[K]||''); if(v===null)return; v?localStorage[K]=v.trim():localStorage.removeItem(K); delete localStorage[D]; load(); }
+
+function connect(){localStorage[K]=DEFAULT_URL;delete localStorage[D];items=[];toast('Menyambungkan...');toggleSheetBtn();sync()}
+function demoMode(){localStorage.removeItem(K);toggleSheetBtn();load()}
+function cfg(){const v=prompt('Tempel URL Web App Apps Script (…/exec). Kosongkan untuk mode demo:',localStorage[K]||''); if(v===null)return; v?localStorage[K]=v.trim():localStorage.removeItem(K); delete localStorage[D]; toggleSheetBtn(); load(); }
 function save(it){localStorage[D]=JSON.stringify(items);if(localStorage[K])queue({no:it.no,done:it.done,tgl:it.tgl,real:it.real,rbrand:it.rbrand||''})}
 function tot(){const b=items.reduce((a,x)=>a+x.total,0),d=items.filter(x=>x.done),r=d.reduce((a,x)=>a+(x.real||x.total),0),bd=d.reduce((a,x)=>a+x.total,0);
  return{b,n:items.length,dn:d.length,r,bd,sisa:b-bd,pct:items.length?d.length/items.length*100:0}}
@@ -159,7 +173,10 @@ if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWor
 window.addEventListener('load',()=>{
   const stored=JSON.parse(localStorage[D]||'[]');
   if(stored.length) items=stored;
+  
+  toggleSheetBtn(); // Jalankan saat pertama kali dimuat
   drawPage();
+  
   checkUpdate().then(r=>{ if(r.state==='new') showUpdateBanner(r.v); });
   sync();
   setInterval(()=>{if(!document.hidden)sync()},30000);
