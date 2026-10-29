@@ -11,7 +11,7 @@ button{cursor:pointer;touch-action:manipulation}
 <header>
   <div class="hbtns">
     <button onclick="forcePull()" title="Tarik data dari Sheet">⬇️ Tarik</button>
-    <button onclick="toast('Menyinkronkan...');sync()">Sync</button>
+    <button onclick="toast('Menyinkronkan...');syncBoard()">Sync</button>
     <button onclick="manualUpdate()">🔄</button>
   </div>
   <h1>Wedding Board</h1>
@@ -19,6 +19,7 @@ button{cursor:pointer;touch-action:manipulation}
   <div><span id="cn" class="badge"></span></div>
 </header>
 <div id="st"></div>
+<div id="bst" style="margin:8px 14px 0;padding:8px 12px;border-radius:8px;font:600 13px Figtree,sans-serif;display:none"></div>
 <main id="m"></main>
 <nav></nav>
 <script src="app.js"></script>
@@ -32,63 +33,65 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'
 function loadBoardLocal(){
   try{
     const j=JSON.parse(localStorage[BK]||'null');
-    if(!j||!Array.isArray(j.sections)) return {sections:[]};
+    if(!j||!Array.isArray(j.sections)) return {sections:[],del:{}};
+    if(!j.del||typeof j.del!=='object') j.del={};
     return j;
-  }catch(e){ return {sections:[]}; }
+  }catch(e){ return {sections:[],del:{}}; }
 }
 
-async function loadBoardRemote(){
-  const u=localStorage[K]; if(!u) return null;
-  try{
-    // Tambahan cache: 'no-store' agar tidak kena cache browser
-    const r=await fetch(u+'?type=board&t='+Date.now(), {cache: 'no-store'});
-    const txt=await r.text();
-    if(!txt || !txt.trim() || txt.trim()==='{}' || txt.trim()==='[]') return null;
-    const j = JSON.parse(txt);
-    
-    if(!j || typeof j !== 'object' || !Array.isArray(j.sections)) {
-      console.warn('Data dari server bukan format Board. Data lokal diamankan.');
-      return null; 
-    }
-    return j;
-  }catch(e){ return null; }
+// ===== SYNC BOARD (merge di server, anti-timpa) =====
+// Server menggabungkan data HP + laptop per item (id + waktu ubah), jadi tidak ada yang saling menimpa.
+function apiUrl(){ return localStorage[K] || DEFAULT_URL; }
+let boardVer=0, boardSyncing=null, boardErr='';
+function setBoardStatus(){
+  const e=document.getElementById('bst'); if(!e) return;
+  const dirty=localStorage.sr_board_dirty==='1';
+  if(boardErr){ e.style.background='#fde8e8'; e.style.color='#a33'; e.textContent='⚠️ '+boardErr; }
+  else { e.style.background='#eef5ee'; e.style.color='#3d5f40';
+    e.textContent=dirty?'⏳ Perubahan menunggu terkirim ke Sheet...':('✅ Tersinkron'+(localStorage.sr_board_last?' '+localStorage.sr_board_last:'')); }
+}
+function syncBoard(){
+  if(boardSyncing) return boardSyncing;
+  boardSyncing=(async()=>{
+    try{
+      for(let i=0;i<5;i++){
+        if(!navigator.onLine){ boardErr='Offline, data tersimpan di perangkat ini'; break; }
+        const ver=boardVer, local=loadBoardLocal();
+        let j;
+        try{
+          const res=await fetch(apiUrl(),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'boardSave',data:local})});
+          const txt=await res.text();
+          try{ j=JSON.parse(txt); }catch(e){
+            boardErr='Apps Script belum versi terbaru. Di editor: Deploy > Manage deployments > Edit > New version > Deploy.'; break;
+          }
+        }catch(e){ boardErr='Gagal terhubung ke Sheet, akan dicoba lagi'; break; }
+        if(j.error){ boardErr='Server: '+j.error; break; }
+        if(!j.ok||!j.data||!Array.isArray(j.data.sections)){ boardErr='Balasan server tidak dikenali'; break; }
+        boardErr='';
+        if(ver!==boardVer) continue;           // ada edit baru saat request jalan -> kirim ulang, jangan timpa
+        localStorage[BK]=JSON.stringify(j.data);
+        localStorage.sr_board_dirty='0';
+        localStorage.sr_board_last=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+        break;
+      }
+    } finally { boardSyncing=null; setBoardStatus(); drawPage(); }
+  })();
+  return boardSyncing;
 }
 
-async function initBoard(){
-  // Coba kirim antrean dulu jika ada
-  if(q_().length > 0) {
-    await flush();
-  }
-  // Jika masih ada antrean boardSave setelah flush (berarti gagal), jangan timpa data lokal
-  if(q_().some(x=>x.action==='boardSave')){ drawPage(); return; }
-  
-  const remote=await loadBoardRemote();
-  if(remote){
-    localStorage[BK]=JSON.stringify(remote);
-  }
-  drawPage();
+function initBoard(){
+  if(!localStorage[K]) localStorage[K]=DEFAULT_URL;                 // pastikan perangkat ini tersambung
+  const q=q_().filter(x=>x.action!=='boardSave'); if(q.length!==q_().length) setq(q); // buang antrean board versi lama
+  drawPage(); syncBoard();
 }
-
-// 🛡️ FUNGSI PENYELAMAT: Paksa Tarik Data dari Google Sheet
-async function forcePull(){
-  if(!confirm('Tarik data dari Google Sheet? Perubahan yang belum tersinkron di HP ini akan dihapus dan diganti dengan data dari Sheet.')) return;
-  toast('Menarik data dari Sheet...');
-  localStorage.removeItem('sr_q'); // Hapus antrean yang macet
-  localStorage.removeItem(BK); // Hapus data lokal HP
-  const remote = await loadBoardRemote();
-  if(remote){
-    localStorage[BK] = JSON.stringify(remote);
-    toast('Berhasil ditarik!');
-  } else {
-    toast('Sheet juga kosong atau gagal konek.');
-  }
-  drawPage();
-}
+function forcePull(){ toast('Menyinkronkan...'); syncBoard(); }
 
 function saveBoard(p){
+  boardVer++;
   localStorage[BK]=JSON.stringify(p);
-  if(localStorage[K]) queue({action:'boardSave', data:p});
-  drawPage();
+  localStorage.sr_board_dirty='1';
+  drawPage(); setBoardStatus();
+  syncBoard();
 }
 
 function formModal(title, fields, onSave){
@@ -150,7 +153,7 @@ function addSection(){
   ], vals=>{
     if(!vals.label) return toast('Isi nama kategori');
     const p=loadBoardLocal();
-    p.sections.push({id:uid(), label:vals.label, items:[]});
+    p.sections.push({id:uid(), label:vals.label, u:Date.now(), items:[]});
     saveBoard(p); toast('Kategori ditambahkan');
   });
 }
@@ -158,12 +161,12 @@ function editSection(secId){
   const p=loadBoardLocal(); const s=p.sections.find(x=>x.id===secId); if(!s)return;
   formModal('Edit Kategori',[{key:'label', label:'Nama Kategori', value:s.label}],vals=>{
     if(!vals.label) return toast('Isi nama kategori');
-    s.label=vals.label; saveBoard(p);
+    s.label=vals.label; s.u=Date.now(); saveBoard(p);
   });
 }
 function delSection(secId){
   confirmModal('Hapus Kategori?','Semua gambar di dalamnya akan dihapus dari daftar ini (file di Drive tetap aman).',()=>{
-    const p=loadBoardLocal(); p.sections=p.sections.filter(x=>x.id!==secId); saveBoard(p); toast('Dihapus');
+    const p=loadBoardLocal(); p.sections=p.sections.filter(x=>x.id!==secId); p.del[secId]=Date.now(); saveBoard(p); toast('Dihapus');
   });
 }
 
@@ -226,9 +229,9 @@ async function openItemModal(secId, itemId){
       if(!sec2){ toast('Kategori sudah dihapus'); m.remove(); return; }
       if(itemId){
         const it2=sec2.items.find(x=>x.id===itemId);
-        if(it2){ it2.title=title; it2.note=note; it2.img=imgUrl; it2.tiktok=tiktok; }
+        if(it2){ it2.title=title; it2.note=note; it2.img=imgUrl; it2.tiktok=tiktok; it2.u=Date.now(); }
       } else {
-        sec2.items.push({id:uid(), title, note, img:imgUrl, tiktok});
+        sec2.items.push({id:uid(), title, note, img:imgUrl, tiktok, u:Date.now()});
       }
       saveBoard(p2);
       m.remove(); toast('Tersimpan');
@@ -242,7 +245,7 @@ async function openItemModal(secId, itemId){
 function delItem(secId,itemId){
   confirmModal('Hapus Inspirasi?','Item ini akan dihapus dari board.',()=>{
     const p=loadBoardLocal(); const sec=p.sections.find(x=>x.id===secId); if(!sec)return;
-    sec.items=sec.items.filter(x=>x.id!==itemId); saveBoard(p); toast('Dihapus');
+    sec.items=sec.items.filter(x=>x.id!==itemId); p.del[itemId]=Date.now(); saveBoard(p); toast('Dihapus');
   });
 }
 
@@ -326,17 +329,7 @@ document.body.addEventListener('click',e=>{
   if(act==='item-del') return delItem(sec,item);
 });
 
-const _origSync=window.sync;
-window.sync=async function(){
-  await _origSync();
-  if(q_().some(x=>x.action==='boardSave')){
-    drawPage();
-    toast('Board menunggu sinkron (Gagal kirim ke Sheet)');
-    return;
-  }
-  const r=await loadBoardRemote();
-  if(r){ localStorage[BK]=JSON.stringify(r); drawPage(); toast('Board tersinkron'); }
-};
+window.sync=function(){ return syncBoard(); };
 
 window.drawPage=function(){
   const p=loadBoardLocal();
@@ -376,8 +369,12 @@ window.drawPage=function(){
   
   html+='<div class="mute" style="text-align:center;margin-top:14px">Foto disimpan di Google Drive kamu.</div>';
   document.getElementById('m').innerHTML=html;
+  const bs=document.getElementById('bst'); if(bs){ bs.style.display='block'; setBoardStatus(); }
 };
 
 initBoard();
+window.addEventListener('online',()=>syncBoard());
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncBoard(); });
+setInterval(()=>{ if(!document.hidden) syncBoard(); },30000);
 </script>
 </body></html>
