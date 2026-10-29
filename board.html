@@ -189,23 +189,29 @@ async function openItemModal(secId, itemId){
     '<label>Judul</label><input id="b_t" type="text" value="'+esc(it.title)+'" placeholder="Contoh: Bunga rustic">'+
     '<label>Catatan / Konsep</label><textarea id="b_n" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font:inherit;min-height:80px" placeholder="Tulis ide, warna, alur, dll...">'+esc(it.note)+'</textarea>'+
     '<label>Ganti Foto (kosongkan jika tidak diubah)</label><input id="b_f" type="file" accept="image/*" style="display:block;margin-bottom:10px">'+
-    (it.img?'<img src="'+esc(it.img)+'" style="width:100%;max-height:200px;object-fit:contain;background:#eee;border-radius:8px;margin-bottom:10px">':'')+
+    '<img id="b_prev" src="'+esc(it.img||'')+'" style="width:100%;max-height:200px;object-fit:contain;background:#eee;border-radius:8px;margin-bottom:10px;display:'+(it.img?'block':'none')+'">'+
     '<div class="grid" style="margin-top:20px"><button id="b_cancel" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button id="b_save" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan</button></div></div>';
   document.body.appendChild(m);
 
+  let fetchedImg='';
   document.getElementById('b_fetch').onclick = async () => {
     const tkUrl = document.getElementById('b_tk').value.trim();
     if(!tkUrl) return toast('Masukkan link TikTok dulu');
-    const btn = document.getElementById('b_fetch'); btn.textContent='...';
+    const btn = document.getElementById('b_fetch'); btn.textContent='...'; btn.disabled=true;
     try {
-      const res = await fetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent(tkUrl));
-      const data = await res.json();
+      const res = await fetch(apiUrl(), {method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'tiktokInfo', url:tkUrl})});
+      let data; try{ data=JSON.parse(await res.text()); }catch(e){ throw new Error('Apps Script belum versi terbaru'); }
+      if(data.error) throw new Error(data.error);
       if(data.title) document.getElementById('b_t').value = data.title;
-      toast('Info TikTok diambil');
+      if(data.img){ fetchedImg=data.img; const pv=document.getElementById('b_prev'); pv.src=data.img; pv.style.display='block'; }
+      toast(data.img ? 'Judul & thumbnail diambil' : 'Judul diambil (tanpa thumbnail)');
     } catch(e) {
-      toast('Gagal ambil info TikTok');
+      toast('Gagal: '+e.message);
     }
-    btn.textContent='Ambil';
+    btn.textContent='Ambil'; btn.disabled=false;
+  };
+  document.getElementById('b_tk').onchange = () => {
+    if(document.getElementById('b_tk').value.trim() && !document.getElementById('b_t').value.trim()) document.getElementById('b_fetch').click();
   };
 
   document.getElementById('b_cancel').onclick=()=>m.remove();
@@ -219,7 +225,7 @@ async function openItemModal(secId, itemId){
     const btn=document.getElementById('b_save'); btn.textContent='Menyimpan...'; btn.disabled=true;
 
     try{
-      let imgUrl=it.img;
+      let imgUrl=fetchedImg||it.img;
       if(file){
         const dataUrl=await compressImage(file);
         imgUrl=await uploadToDrive(dataUrl, 'board_'+Date.now()+'.jpg');
