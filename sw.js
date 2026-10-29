@@ -1,5 +1,5 @@
 // Seserahan Tracker SW v9 - tambah diet
-const CACHE_NAME='seserahan-v17';
+const CACHE_NAME='seserahan-v18';
 const urlsToCache=['./','./index.html','./daftar.html','./grafik.html','./planning.html','./board.html','./diet.html','./style.css','./app.js','./manifest.json','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{self.skipWaiting();
  e.waitUntil(caches.open(CACHE_NAME).then(c=>Promise.allSettled(urlsToCache.map(u=>c.add(u).catch(err=>console.warn('Gagal cache:',u,err))))))});
