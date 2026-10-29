@@ -1,8 +1,11 @@
 // ===== Shared config =====
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbw_mBgFgBAoP9LIwQnhE-oxjSJvNRK5PxALH3JHB_lkXsnd5HDcIRIB98SxLiqpkGu4/exec';
+// >>> GANTI URL DI BAWAH INI dengan URL /exec dari New deployment <<<
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyBhJSyzKKL_x_lbccQsvMjBPNBT-8q3kNqT6f_s15NtW--4lMxgAhUIQO29igYttBt/exec';
 const $=s=>document.querySelector(s);
 const R=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const K='sr_url',D='sr_data';
+// paksa semua perangkat pakai URL terbaru
+if(localStorage[K] && localStorage[K]!==DEFAULT_URL) localStorage[K]=DEFAULT_URL;
 const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
 
 let lastSync='',items=[],demo=false;
