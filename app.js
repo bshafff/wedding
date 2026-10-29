@@ -1,6 +1,6 @@
 // ===== Shared config =====
 // >>> GANTI URL DI BAWAH INI dengan URL /exec dari New deployment <<<
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyBhJSyzKKL_x_lbccQsvMjBPNBT-8q3kNqT6f_s15NtW--4lMxgAhUIQO29igYttBt/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyMOTglXptUvCOuTKvV3uIpYu1lHWLjNpTTKBOxcvl8hLTQogcMg1-uGDoTgt23h8cQ/exec';
 const $=s=>document.querySelector(s);
 const R=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const K='sr_url',D='sr_data';
