@@ -39,7 +39,7 @@ function loadBoardLocal(){
 async function loadBoardRemote(){
   const u=localStorage[K]; if(!u) return null;
   try{
-    const r=await fetch(u+'?type=board&t='+Date.now());
+       const r=await fetch(u+'?type=board&t='+Date.now(), {cache: 'no-store'});
     const txt=await r.text();
     // Cek jika kosong
     if(!txt || !txt.trim() || txt.trim()==='{}' || txt.trim()==='[]') return null;
