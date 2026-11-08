@@ -138,7 +138,7 @@ async function manualUpdate(){
 }
 
 function renderNav(active){
-  const items=[['home','./','🏠','Home'],['vendor','vendor.html','🏷️','Vendor'],['budget','budget.html','💰','Budget'],['planning','planning.html','✅','Rencana'],['board','board.html','💡','Board']];
+  const items=[['home','./','🏠','Home'],['vendor','vendor.html','🏷️','Vendor'],['budget','budget.html','💰','Budget'],['daftar','daftar.html','🎁','Seserahan'],['planning','planning.html','✅','Rencana'],['board','board.html','💡','Board']];
   const nav=document.querySelector('nav'); if(!nav)return;
   nav.innerHTML=items.map(x=>`<button class="${active===x[0]?'on':''}" onclick="location.href='${x[1]}'"><div class="ic">${x[2]}</div>${x[3]}</button>`).join('');
 }

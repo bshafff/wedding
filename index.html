@@ -16,7 +16,7 @@ window.drawPage=function(){
    <a class="tile" href="budget.html"><b class="num">${total?Math.round(used/total*100)+'%':R(used)}</b><span>${total?'budget terpakai':'terpilih · isi total budget'}</span></a>
    <a class="tile" href="planning.html"><b class="num">${tk.length?td+'/'+tk.length:'-'}</b><span>checklist selesai</span></a>
    <a class="tile" href="daftar.html"><b class="num">${t?t.dn+'/'+t.n:'-'}</b><span>seserahan dibeli</span></a></div>
-  ${[['board.html','💡','Wedding Board','Inspirasi & konsep yang kamu suka'],['grafik.html','📊','Grafik seserahan','Porsi anggaran & progres'],['diet.html','🥗','Program diet','Target & catatan harian']].map(x=>`<a class="menu-item" href="${x[0]}"><div class="menu-icon" style="background:var(--tint)">${x[1]}</div><div class="menu-text"><b>${x[2]}</b><small>${x[3]}</small></div><div class="menu-arrow">›</div></a>`).join('')}
+  ${[['daftar.html','🎁','Daftar Seserahan','Item, harga & realisasi pembelian'],['board.html','💡','Wedding Board','Inspirasi & konsep yang kamu suka'],['grafik.html','📊','Grafik seserahan','Porsi anggaran & progres'],['diet.html','🥗','Program diet','Target & catatan harian']].map(x=>`<a class="menu-item" href="${x[0]}"><div class="menu-icon" style="background:var(--tint)">${x[1]}</div><div class="menu-text"><b>${x[2]}</b><small>${x[3]}</small></div><div class="menu-arrow">›</div></a>`).join('')}
   <div class="mute" style="text-align:center;margin-top:14px">Versi ${localStorage.app_v||'-'}</div>`;
 };
 drawPage();

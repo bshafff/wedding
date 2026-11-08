@@ -1,6 +1,5 @@
-1. Apps Script: buat file baru, tempel isi WedBackend.gs.
-2. Di Code.gs, fungsi post_, tepat SEBELUM baris  if (d.action) return json_({ error: 'action tidak dikenal...  tambahkan satu baris:
-     if (d.action === 'wedSave') return wedSave_(d.data);
-3. Deploy > Manage deployments > Edit > New version > Deploy (URL /exec tidak berubah).
-4. Upload isi folder wedding-main ke repo/Vercel seperti biasa. Buka app, ketuk tombol 🔄 untuk ambil versi baru.
-Catatan: tanggal Wedding Planning default sudah 2027-04-04; kalau di Sheet masih tersimpan tanggal lama, ubah lewat "Edit Info".
+1. Apps Script: hapus semua isi Code.gs lama, tempel seluruh isi Code.gs yang baru, lalu Simpan.
+2. Deploy > Manage deployments > Edit > New version > Deploy (URL /exec tidak berubah).
+3. Upload isi folder wedding-main ke repo/Vercel seperti biasa, lalu buka app dan ketuk tombol Sync.
+Tidak ada yang perlu diedit manual. Tab "Wedding" di Google Sheet akan dibuat otomatis.
+Catatan: tanggal default di halaman Rencana sudah 2027-04-04; kalau di Sheet masih tersimpan tanggal lama, ubah lewat "Edit Info".
