@@ -1,12 +1,12 @@
 // ===== Shared config =====
 // >>> GANTI URL DI BAWAH INI dengan URL /exec dari New deployment <<<
-const DEFAULT_URL='https://script.google.com/macros/s/AKfycbyMOTglXptUvCOuTKvV3uIpYu1lHWLjNpTTKBOxcvl8hLTQogcMg1-uGDoTgt23h8cQ/exec';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbzZ6A-MaS_XEZPpGh-PApOXLTyHBSTNN1rRkXrv1nyxfk3tv1BoxTE46GQpjNSN5hLw/exec';
 const $=s=>document.querySelector(s);
 const R=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
 const K='sr_url',D='sr_data';
 // paksa semua perangkat pakai URL terbaru
 if(localStorage[K] && localStorage[K]!==DEFAULT_URL) localStorage[K]=DEFAULT_URL;
-const COL=['#8f1d21','#b8893b','#5f7f62','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
+const COL=['#1f3a2d','#b8893b','#3e8e5e','#c9694d','#6b4a7a','#3f6e8c','#a8946f','#d08a9b'];
 
 let lastSync='',items=[],demo=false;
 
@@ -119,10 +119,10 @@ function showUpdateBanner(version){
   if(document.getElementById('ub'))return;
   const b=document.createElement('div');
   b.id='ub';
-  b.style.cssText='position:fixed;top:0;left:0;right:0;background:#5f7f62;color:#fff;padding:10px 14px;text-align:center;z-index:99999;font:600 14px Figtree,sans-serif;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;background:#3e8e5e;color:#fff;padding:10px 14px;text-align:center;z-index:99999;font:600 14px Plus Jakarta Sans,sans-serif;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap';
   b.innerHTML='<span>Versi baru '+version+' tersedia</span>'+
-    '<button id="ub-yes" style="padding:6px 12px;border:0;border-radius:6px;background:#fff;color:#5f7f62;font:600 13px Figtree,sans-serif">Muat ulang</button>'+
-    '<button id="ub-no" style="padding:6px 12px;border:1px solid #fff;border-radius:6px;background:none;color:#fff;font:600 13px Figtree,sans-serif">Nanti</button>';
+    '<button id="ub-yes" style="padding:6px 12px;border:0;border-radius:6px;background:#fff;color:#3e8e5e;font:600 13px Plus Jakarta Sans,sans-serif">Muat ulang</button>'+
+    '<button id="ub-no" style="padding:6px 12px;border:1px solid #fff;border-radius:6px;background:none;color:#fff;font:600 13px Plus Jakarta Sans,sans-serif">Nanti</button>';
   document.body.appendChild(b);
   document.getElementById('ub-yes').onclick=()=>hardReset();
   document.getElementById('ub-no').onclick=()=>b.remove();
@@ -138,14 +138,7 @@ async function manualUpdate(){
 }
 
 function renderNav(active){
-  const items=[
-    ['home','./','🏠','Home'],
-    ['daftar','daftar.html','📋','Daftar'],
-    ['grafik','grafik.html','📊','Grafik'],
-    ['planning','planning.html','💍','Rencana'],
-    ['diet','diet.html','🥗','Diet'],
-    ['board','board.html','💡','Board']
-  ];
+  const items=[['home','./','🏠','Home'],['vendor','vendor.html','🏷️','Vendor'],['budget','budget.html','💰','Budget'],['planning','planning.html','✅','Rencana'],['board','board.html','💡','Board']];
   const nav=document.querySelector('nav'); if(!nav)return;
   nav.innerHTML=items.map(x=>`<button class="${active===x[0]?'on':''}" onclick="location.href='${x[1]}'"><div class="ic">${x[2]}</div>${x[3]}</button>`).join('');
 }
@@ -153,7 +146,7 @@ function renderNav(active){
 function welcomeHTML(){
   return `<div class="card" style="text-align:center;padding:30px 18px"><div class="num" style="font-size:24px;color:var(--wine)">Sambungkan ke Google Sheet</div>
 <p class="mute" style="margin:10px 0 20px">Ketuk sekali untuk memuat daftar seserahan dan menyinkronkan semua perubahan.</p>
-<button onclick="connect()" style="padding:14px 40px;border:0;border-radius:30px;background:var(--wine);color:#fff;font:600 16px Figtree,sans-serif">Sambung</button>
+<button onclick="connect()" style="padding:14px 40px;border:0;border-radius:30px;background:var(--wine);color:#fff;font:600 16px Plus Jakarta Sans,sans-serif">Sambung</button>
 <p style="margin-top:18px"><a href="#" class="mute" onclick="demoMode();return false">Coba mode demo</a></p></div>`;
 }
 
@@ -162,7 +155,7 @@ function drawPage(){ if(typeof window.drawPage==='function') window.drawPage(); 
 // ===== Install prompt =====
 let dp=null;
 function showInst(t,f){if($('#ib'))return;const b=document.createElement('button');b.id='ib';b.innerHTML=t+' <span id="ibx" style="margin-left:10px;opacity:.7">✕</span>';
- b.style.cssText='position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#8f1d21;color:#fff;padding:12px 22px;border:0;border-radius:30px;font:600 14px Figtree,sans-serif;box-shadow:0 4px 12px #0004;z-index:9999;white-space:nowrap';
+ b.style.cssText='position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1f3a2d;color:#fff;padding:12px 22px;border:0;border-radius:30px;font:600 14px Plus Jakarta Sans,sans-serif;box-shadow:0 4px 12px #0004;z-index:9999;white-space:nowrap';
  b.onclick=ev=>{if(ev.target.id==='ibx'){rmInst();return}f()};document.body.appendChild(b)}
 function rmInst(){const b=$('#ib');if(b)b.remove()}
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;showInst('⬇️ Install Aplikasi',async()=>{dp.prompt();await dp.userChoice;dp=null;rmInst()})});

@@ -1,0 +1,19 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1f3a2d"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png"><title>Budget</title><link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"></head><body><header><div class="hbtns"><button onclick="toast('Menyinkronkan...');sync()">Sync</button></div><h1>Budget</h1><small id="sub"></small></header><div id="st"></div><main id="m"></main><nav></nav><script src="app.js"></script><script src="wed.js"></script><script>
+renderNav('budget');
+function setv(k,lab){const x=prompt(lab,kvGet(k,0)||'');if(x!==null)kvSet(k,Number(String(x).replace(/\D/g,''))||0)}
+window.drawPage=function(){
+  const all=wl().vendors,total=kvGet('budget',0),tr=items.length?tot():{b:0};
+  const rows=CATS.map(c=>({c,sp:all.filter(v=>v.cat===c[0]&&chosen(v)).reduce((a,v)=>a+(v.price||0),0),al:kvGet('alloc_'+c[0],0)}));
+  rows.push({c:['sers','Seserahan (dari tracker)','🎁'],sp:tr.b,al:kvGet('alloc_sers',0)});
+  const used=rows.reduce((a,x)=>a+x.sp,0),alloc=rows.reduce((a,x)=>a+x.al,0),g=kvGet('guests',0);
+  $('#sub').textContent=total?R(total-used)+' tersisa dari total budget':'Isi total budget dulu';
+  $('#m').innerHTML=`<div class="tiles"><div class="tile" onclick="setv('budget','Total budget (Rp)')"><span>Total budget · ketuk untuk ubah</span><b class="num">${total?R(total):'Isi'}</b></div>
+  <div class="tile" onclick="setv('guests','Perkiraan jumlah tamu')"><span>Perkiraan tamu</span><b class="num">${g||'Isi'}</b></div></div>
+  <div class="card"><div class="row"><b>Terpakai</b><b>${R(used)}</b></div><div class="bar"><i style="width:${total?Math.min(100,used/total*100):0}%;background:${total&&used>total?'#d23b54':''}"></i></div>
+  <div class="mute">Alokasi terbagi ${R(alloc)}${total?' · belum dibagi '+R(total-alloc):''}${g&&used?' · ±'+R(used/g)+' per tamu':''}</div></div>
+  ${rows.map(x=>`<div class="card"><div class="row"><b>${x.c[2]} ${x.c[1]}</b><span class="mute">${x.sp&&x.al?Math.round(x.sp/x.al*100)+'%':''}</span></div>
+  <div class="bar"><i style="width:${x.al?Math.min(100,x.sp/x.al*100):0}%;background:${x.al&&x.sp>x.al?'#d23b54':''}"></i></div>
+  <div class="row mute"><span>Terpilih ${R(x.sp)}</span><a href="#" onclick="setv('alloc_${x.c[0]}','Alokasi ${x.c[1]} (Rp)');return false" style="color:var(--leaf);font-weight:700">Alokasi ${x.al?R(x.al):'isi'} ✎</a></div></div>`).join('')}`;
+};
+drawPage();
+</script></body></html>

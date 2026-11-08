@@ -1,13 +1,13 @@
 <!doctype html><html lang="id"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f3a2d"><link rel="manifest" href="manifest.json">
 <title>Wedding Planning</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
 button{cursor:pointer;touch-action:manipulation}
 .plan-sec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
-.plan-sec h3{margin:0;font-family:Fraunces,Georgia,serif;color:var(--wine);font-size:17px}
+.plan-sec h3{margin:0;font-family:Young Serif,Georgia,serif;color:var(--wine);font-size:17px}
 .plan-task{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:6px}
 .plan-task input[type=checkbox]{width:22px;height:22px;accent-color:var(--sage);margin-top:1px}
 .plan-task .cat{font-size:11px;color:var(--gold);font-weight:600}
@@ -36,7 +36,7 @@ renderNav('planning');
 
 const PK='sr_plan';
 const PLAN_DEFAULT={
-  info:{couple:'Shaffan Burhan dan Annisa Istiqomah Sugandi', date:'2027-04-14', location:'Ciwidey'},
+  info:{couple:'Shaffan Burhan dan Annisa Istiqomah Sugandi', date:'2027-04-04', location:'Ciwidey'},
   sections:[
     {id:'s1', label:'H-12 bulan', tasks:[
       {id:'t1', cat:'Persiapan', title:'Diskusi & Perencanaan Awal', done:false},
@@ -121,7 +121,7 @@ function formModal(title, fields, onSave){
   m.onclick=ev=>{ if(ev.target===m) m.remove(); };
   m.innerHTML='<div class="mc"><h3>'+esc(title)+'</h3>'+
     fields.map(f=>'<label>'+esc(f.label)+'</label><input id="fm_'+f.key+'" type="'+(f.type||'text')+'" value="'+esc(f.value||'')+'" placeholder="'+esc(f.placeholder||'')+'">').join('')+
-    '<div class="grid" style="margin-top:20px"><button data-act="form-cancel" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button data-act="form-save" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan</button></div></div>';
+    '<div class="grid" style="margin-top:20px"><button data-act="form-cancel" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Plus Jakarta Sans,sans-serif">Batal</button><button data-act="form-save" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Plus Jakarta Sans,sans-serif">Simpan</button></div></div>';
   m._fields=fields;
   m._onSave=onSave;
   document.body.appendChild(m);
@@ -131,7 +131,7 @@ function confirmModal(title, message, onYes){
   const m=document.createElement('div'); m.id='md';
   m.onclick=ev=>{ if(ev.target===m) m.remove(); };
   m.innerHTML='<div class="mc"><h3>'+esc(title)+'</h3><p class="mute" style="margin:14px 0">'+esc(message)+'</p>'+
-    '<div class="grid" style="margin-top:20px"><button data-act="cf-no" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button data-act="cf-yes" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Ya, lanjut</button></div></div>';
+    '<div class="grid" style="margin-top:20px"><button data-act="cf-no" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Plus Jakarta Sans,sans-serif">Batal</button><button data-act="cf-yes" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Plus Jakarta Sans,sans-serif">Ya, lanjut</button></div></div>';
   m._onYes=onYes;
   document.body.appendChild(m);
 }
@@ -276,7 +276,7 @@ window.drawPage=function(){
   const pct=all.length?done/all.length*100:0;
   let html='';
   html+='<div class="card"><div class="row"><b>Progres persiapan</b><span class="mute">'+done+'/'+all.length+'</span></div><div class="bar"><i style="width:'+pct+'%"></i></div><div class="mute">'+pct.toFixed(0)+'% selesai</div></div>';
-  html+='<button data-act="section-add" style="padding:11px;border-radius:10px;font:600 14px Figtree,sans-serif;width:100%;border:1px dashed var(--wine);background:none;color:var(--wine);margin-bottom:12px">+ Tambah bagian (H-…)</button>';
+  html+='<button data-act="section-add" style="padding:11px;border-radius:10px;font:600 14px Plus Jakarta Sans,sans-serif;width:100%;border:1px dashed var(--wine);background:none;color:var(--wine);margin-bottom:12px">+ Tambah bagian (H-…)</button>';
   if(!p.sections.length) html+='<p class="mute" style="text-align:center">Belum ada bagian.</p>';
   p.sections.forEach((s,idx)=>{
     const sd=s.tasks.filter(t=>t.done).length;
@@ -297,7 +297,7 @@ window.drawPage=function(){
         '<button data-act="task-del" data-sec="'+s.id+'" data-task="'+t.id+'" style="border:0;background:none;font-size:17px;padding:6px 4px;color:#a33">🗑️</button>'+
       '</div>';
     });
-    html+='<button data-act="task-add" data-sec="'+s.id+'" style="margin-top:6px;padding:9px 12px;border:1px dashed var(--line);background:none;border-radius:8px;font:600 13px Figtree,sans-serif;color:var(--wine);width:100%">+ Tambah tugas</button>';
+    html+='<button data-act="task-add" data-sec="'+s.id+'" style="margin-top:6px;padding:9px 12px;border:1px dashed var(--line);background:none;border-radius:8px;font:600 13px Plus Jakarta Sans,sans-serif;color:var(--wine);width:100%">+ Tambah tugas</button>';
     html+='</div>';
   });
   html+='<div class="mute" style="text-align:center;margin-top:14px">Planning tersinkron ke Google Sheet.</div>';

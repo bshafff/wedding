@@ -1,8 +1,8 @@
 <!doctype html><html lang="id"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f3a2d"><link rel="manifest" href="manifest.json">
 <title>Program Diet</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
 button{cursor:pointer;touch-action:manipulation}
@@ -155,7 +155,7 @@ function formModal(title,fields,onSave){
       }
       return '<label>'+esc(f.label)+'</label><input id="fm_'+f.key+'" type="'+(f.type||'text')+'" value="'+esc(f.value||'')+'" placeholder="'+esc(f.placeholder||'')+'">';
     }).join('')+
-    '<div class="grid" style="margin-top:20px"><button data-act="form-cancel" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button data-act="form-save" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Simpan</button></div></div>';
+    '<div class="grid" style="margin-top:20px"><button data-act="form-cancel" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Plus Jakarta Sans,sans-serif">Batal</button><button data-act="form-save" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Plus Jakarta Sans,sans-serif">Simpan</button></div></div>';
   m._fields=fields; m._onSave=onSave;
   document.body.appendChild(m);
   setTimeout(()=>{const i=m.querySelector('input,select');if(i)i.focus()},100);
@@ -164,7 +164,7 @@ function confirmModal(title,message,onYes){
   const m=document.createElement('div'); m.id='md';
   m.onclick=ev=>{ if(ev.target===m)m.remove(); };
   m.innerHTML='<div class="mc"><h3>'+esc(title)+'</h3><p class="mute" style="margin:14px 0">'+esc(message)+'</p>'+
-    '<div class="grid" style="margin-top:20px"><button data-act="cf-no" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Figtree,sans-serif">Batal</button><button data-act="cf-yes" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Figtree,sans-serif">Ya, lanjut</button></div></div>';
+    '<div class="grid" style="margin-top:20px"><button data-act="cf-no" style="padding:13px;border:0;border-radius:10px;background:#eee;color:var(--ink);font:600 15px Plus Jakarta Sans,sans-serif">Batal</button><button data-act="cf-yes" style="padding:13px;border:0;border-radius:10px;background:var(--wine);color:#fff;font:600 15px Plus Jakarta Sans,sans-serif">Ya, lanjut</button></div></div>';
   m._onYes=onYes;
   document.body.appendChild(m);
 }
@@ -308,7 +308,7 @@ window.drawPage=function(){
     const b=bmi(cur,x.height);
     html+='<div class="mute">'+prog.toFixed(0)+'% menuju target · BMI '+b+bmiCat(b)+'</div>';
     if(start||cur) html+='<div class="mute">Delta dari awal: '+(delta>0?'+':'')+delta.toFixed(1)+' kg · sisa ke target: '+toTarget.toFixed(1)+' kg</div>';
-    html+='<div class="row" style="margin-top:10px"><button data-act="log" data-id="'+x.id+'" style="padding:10px;border:1px dashed var(--wine);background:none;color:var(--wine);border-radius:8px;font:600 13px Figtree,sans-serif;width:100%">+ Catat hari ini</button></div>';
+    html+='<div class="row" style="margin-top:10px"><button data-act="log" data-id="'+x.id+'" style="padding:10px;border:1px dashed var(--wine);background:none;color:var(--wine);border-radius:8px;font:600 13px Plus Jakarta Sans,sans-serif;width:100%">+ Catat hari ini</button></div>';
     if(logToday){
       html+='<div class="realbox"><div class="sec">HARI INI</div>'+metricBars(logToday,t)+'</div>';
     } else {

@@ -1,0 +1,60 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1f3a2d"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png"><title>Vendor</title><link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"></head><body><header><div class="hbtns"><button onclick="toast('Menyinkronkan...');sync()">Sync</button></div><h1>Vendor</h1><small id="sub"></small></header><div id="st"></div><main id="m"></main><nav></nav><script src="app.js"></script><script src="wed.js"></script><script>
+renderNav('vendor');
+let cat=(location.hash||'#venue').slice(1),cmp=[];
+if(!CATS.some(c=>c[0]===cat))cat='venue';
+const vs=()=>wl().vendors;
+function pick(id,st){const v=vs().find(x=>x.id===id);if(v){v.status=st;vSave(v);toast(st==='Dipilih'?v.name+' dipilih':'Status: '+st)}}
+function tcmp(id){cmp=cmp.includes(id)?cmp.filter(x=>x!==id):[...cmp,id].slice(-3);drawPage()}
+function edit(id){
+  const v=id?vs().find(x=>x.id===id):{id:uid(),cat,status:'Survey',name:'',contact:'',price:'',incl:'',pros:'',cons:'',note:''};
+  let st=v.status;
+  const m=sheet(`<h3>${id?'Edit':'Tambah'} vendor</h3>
+  <label>Kategori</label><select id="f_cat">${CATS.map(c=>`<option value="${c[0]}" ${c[0]===v.cat?'selected':''}>${c[1]}</option>`).join('')}</select>
+  <label>Nama vendor</label><input id="f_name" value="${esc(v.name)}" placeholder="Contoh: Gedung Sasana">
+  <label>Harga paket (Rp)</label><input id="f_price" type="number" inputmode="numeric" value="${esc(v.price)}">
+  <label>Isi paket (satu per baris)</label><textarea id="f_incl" rows="4" placeholder="Sewa 6 jam&#10;Kursi 300&#10;Ruang rias">${esc(v.incl)}</textarea>
+  <label>Plus (+) satu per baris</label><textarea id="f_pros" rows="2">${esc(v.pros)}</textarea>
+  <label>Minus (−) satu per baris</label><textarea id="f_cons" rows="2">${esc(v.cons)}</textarea>
+  <label>Status</label><div class="seg" id="f_st">${STAT.map(s=>`<button type="button" data-s="${s}" class="${s===st?'on':''}">${s}</button>`).join('')}</div>
+  <label>Kontak / IG</label><input id="f_contact" value="${esc(v.contact)}">
+  <label>Catatan</label><input id="f_note" value="${esc(v.note)}" placeholder="Tanggal kosong? DP berapa? Syarat?">
+  <div class="grid" style="margin-top:18px">${id?'<button class="btn ghost" id="f_del" style="color:#a02a3d">Hapus</button>':'<button class="btn ghost" id="f_x">Batal</button>'}<button class="btn" id="f_ok">Simpan</button></div>`);
+  m.querySelector('#f_st').onclick=e=>{const b=e.target.closest('button');if(!b)return;st=b.dataset.s;m.querySelectorAll('#f_st button').forEach(x=>x.classList.toggle('on',x===b))};
+  const g=k=>m.querySelector('#f_'+k).value;
+  if(id)m.querySelector('#f_del').onclick=()=>{if(confirm('Hapus vendor ini?')){m.remove();vDel(id)}};else m.querySelector('#f_x').onclick=()=>m.remove();
+  m.querySelector('#f_ok').onclick=()=>{if(!g('name').trim()){toast('Isi nama vendor');return}
+    Object.assign(v,{cat:g('cat'),name:g('name').trim(),price:Number(g('price'))||0,incl:g('incl'),pros:g('pros'),cons:g('cons'),status:st,contact:g('contact'),note:g('note')});
+    cat=v.cat;m.remove();vSave(v)};
+}
+function compare(){
+  const a=cmp.map(id=>vs().find(x=>x.id===id)).filter(Boolean),low=Math.min(...a.filter(v=>v.price).map(v=>v.price));
+  const row=(l,f)=>`<tr><th>${l}</th>${a.map(v=>`<td>${f(v)}</td>`).join('')}</tr>`;
+  const L=s=>lines(s).map(x=>`<div class="ln">• ${esc(x)}</div>`).join('')||'-';
+  sheet(`<h3>Bandingkan</h3><div style="overflow:auto"><table class="cmp"><tr><th></th>${a.map(v=>`<th>${esc(v.name)}</th>`).join('')}</tr>
+  ${row('Harga',v=>`<span class="${v.price&&v.price===low&&a.length>1?'low':''}">${v.price?R(v.price):'-'}</span>`)}${row('Isi paket',v=>L(v.incl))}${row('Plus',v=>L(v.pros))}${row('Minus',v=>L(v.cons))}${row('Status',v=>`<span class="pill ${v.status}">${v.status}</span>`)}
+  </table></div><button class="btn" style="width:100%;margin-top:14px" onclick="document.getElementById('md').remove()">Tutup</button>`);
+}
+window.drawPage=function(){
+  const all=vs(),rank=v=>chosen(v)?0:v.status==='Coret'?3:1,mine=all.filter(v=>v.cat===cat).sort((a,b)=>rank(a)-rank(b)||(a.price||9e12)-(b.price||9e12));
+  const done=CATS.filter(c=>c[0]!=='lain'&&all.some(v=>v.cat===c[0]&&chosen(v))).length;
+  $('#sub').textContent=done+' dari '+(CATS.length-1)+' kategori sudah ada vendor terpilih';
+  const sel=mine.find(chosen);
+  $('#m').innerHTML=`<div class="scroll">${CATS.map(c=>`<button class="${c[0]===cat?'on':''} ${all.some(v=>v.cat===c[0]&&chosen(v))?'ok':''}" onclick="cat='${c[0]}';history.replaceState(0,0,'#'+cat);cmp=[];drawPage()">${c[2]} ${c[1]} ${all.filter(v=>v.cat===c[0]).length||''}</button>`).join('')}</div>
+  <div class="row" style="margin-bottom:10px"><span class="mute">${sel?'Terpilih: <b>'+esc(sel.name)+'</b> · '+R(sel.price):'Belum ada yang dipilih'}</span><button class="btn berry" onclick="edit()">+ Vendor</button></div>
+  ${mine.length?mine.map(v=>`<div class="vc ${chosen(v)?'pick':''} ${v.status==='Coret'?'out':''}">
+   <div class="row"><h4>${esc(v.name)}</h4><span class="pill ${v.status}">${v.status}</span></div>
+   <div class="price">${v.price?R(v.price):'Harga belum diisi'}</div>
+   ${lines(v.incl).length?'<div class="mute"><b>Isi paket</b>'+lines(v.incl).map(x=>'<div class="ln">• '+esc(x)+'</div>').join('')+'</div>':''}
+   ${lines(v.pros).length||lines(v.cons).length?`<div class="pm"><div><b>Plus</b>${lines(v.pros).map(x=>'<div class="ln">+ '+esc(x)+'</div>').join('')||'-'}</div><div><b>Minus</b>${lines(v.cons).map(x=>'<div class="ln">− '+esc(x)+'</div>').join('')||'-'}</div></div>`:''}
+   ${v.contact||v.note?`<div class="mute">${esc([v.contact,v.note].filter(Boolean).join(' · '))}</div>`:''}
+   <div class="row" style="margin-top:10px;justify-content:flex-start;flex-wrap:wrap">
+    ${chosen(v)?'':`<button class="btn" onclick="pick('${v.id}','Dipilih')">Pilih ini</button>`}
+    ${v.status==='Dipilih'?`<button class="btn ghost" onclick="pick('${v.id}','Booked')">Sudah booking</button>`:''}
+    ${!chosen(v)&&v.status==='Survey'?`<button class="btn ghost" onclick="pick('${v.id}','Shortlist')">Shortlist</button>`:''}
+    <button class="btn ghost" onclick="edit('${v.id}')">Edit</button>
+    <label class="mute" style="margin:0 0 0 auto"><input type="checkbox" ${cmp.includes(v.id)?'checked':''} onchange="tcmp('${v.id}')"> bandingkan</label></div></div>`).join('')
+  :'<div class="card" style="text-align:center"><b>Belum ada vendor di kategori ini</b><p class="mute">Catat 2–3 vendor yang kamu temui: harga, isi paket, plus-minusnya.</p><button class="btn" onclick="edit()">Tambah vendor pertama</button></div>'}
+  ${cmp.length>1?'<div class="cbar"><button class="btn berry" onclick="compare()">Bandingkan '+cmp.length+' vendor</button></div>':''}`;
+};
+drawPage();
+</script></body></html>

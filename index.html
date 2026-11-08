@@ -1,63 +1,23 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#8f1d21"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Seserahan">
-<title>Seserahan Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head><body>
-<header>
-  <div class="hbtns"><button onclick="cfg()">Sheet</button><button onclick="toast('Menyinkronkan...');sync()">Sync</button><button onclick="manualUpdate()">🔄</button></div>
-  <h1>Seserahan Tracker</h1>
-  <div class="couple">Shaffan Burhan dan Annisa Istiqomah Sugandi</div>
-  <small id="sub"></small><small id="sy"></small>
-  <div><span id="cn" class="badge"></span></div>
-</header>
-<div id="st"></div>
-<main id="m"></main>
-<nav></nav>
-<script src="app.js"></script>
-<script>
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1f3a2d"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png"><title>Shaffan & Annisa</title><link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"></head><body><header><div class="hbtns"><button onclick="toast('Menyinkronkan...');sync()">Sync</button></div><h1>Wedding Kami</h1><small id="sub"></small></header><div id="st"></div><main id="m"></main><nav></nav><script src="app.js"></script><script src="wed.js"></script><script>
 renderNav('home');
+const PRIO=['venue','katering','dekor','foto','mua','musik','wo'];
 window.drawPage=function(){
-  const t=tot();
-  $('#sub').textContent=t.dn+' dari '+t.n+' item sudah dibeli';
-  if(!localStorage[K]&&!demo){ $('#m').innerHTML=welcomeHTML(); return; }
-  $('#m').innerHTML=`
-    <div class="grid" style="margin-bottom:12px">
-      <div class="card"><div class="mute">Total realisasi</div><div class="num" style="font-size:20px;color:var(--wine)">${R(t.r)}</div></div>
-      <div class="card"><div class="mute">Anggaran</div><div class="num" style="font-size:20px">${R(t.b)}</div></div>
-    </div>
-    <div class="card">
-      <div class="row"><b>Progres</b><span class="mute">${t.pct.toFixed(0)}%</span></div>
-      <div class="bar"><i style="width:${t.pct}%"></i></div>
-      <div class="mute">${t.dn} dari ${t.n} item sudah dibeli</div>
-    </div>
-    <a class="menu-item" href="daftar.html">
-      <div class="menu-icon" style="background:#fde8e4">📋</div>
-      <div class="menu-text"><b>Daftar Seserahan</b><small>Kelola item, realisasi, edit & harga</small></div>
-      <div class="menu-arrow">›</div>
-    </a>
-    <a class="menu-item" href="grafik.html">
-      <div class="menu-icon" style="background:#f0e8f8">📊</div>
-      <div class="menu-text"><b>Grafik & Analisa</b><small>Porsi anggaran, progres, tren realisasi</small></div>
-      <div class="menu-arrow">›</div>
-    </a>
-    <a class="menu-item" href="planning.html">
-      <div class="menu-icon" style="background:#e8f4ea">💍</div>
-      <div class="menu-text"><b>Wedding Planning</b><small>Timeline & checklist persiapan</small></div>
-      <div class="menu-arrow">›</div>
-    </a>
-    <a class="menu-item" href="diet.html">
-      <div class="menu-icon" style="background:#e8f4ea">🥗</div>
-      <div class="menu-text"><b>Program Diet</b><small>Target, berat, kalori, air, langkah, tidur</small></div>
-      <div class="menu-arrow">›</div>
-    </a>
-    <a class="menu-item" href="board.html">
-      <div class="menu-icon" style="background:#fdf6d8">💡</div>
-      <div class="menu-text"><b>Wedding Board</b><small>Inspirasi dekorasi, venue, seserahan, dll</small></div>
-      <div class="menu-arrow">›</div>
-    </a>
-    <div class="mute" style="text-align:center;margin-top:14px">Versi ${localStorage.app_v||'-'}</div>`;
+  const all=wl().vendors,plan=JSON.parse(localStorage.sr_plan||'null'),dt=new Date(((plan&&plan.info&&plan.info.date)||'2027-04-04')+'T00:00'),now=new Date(),start=new Date('2026-11-01T00:00');
+  const days=Math.ceil((dt-now)/864e5),pc=Math.max(0,Math.min(100,(now-start)/(dt-start)*100));
+  const tk=plan?plan.sections.flatMap(s=>s.tasks):[],td=tk.filter(t=>t.done).length;
+  const nc=PRIO.find(id=>!all.some(v=>v.cat===id&&chosen(v))),cn=nc&&CATS.find(c=>c[0]===nc),nv=nc?all.filter(v=>v.cat===nc).length:0;
+  const total=kvGet('budget',0),used=all.filter(chosen).reduce((a,v)=>a+(v.price||0),0),t=items.length?tot():null;
+  $('#sub').textContent='';
+  const mons=[];for(let d=new Date(start);d<=dt;d.setMonth(d.getMonth()+1))mons.push(d.toLocaleDateString('id-ID',{month:'short'}));
+  $('#m').innerHTML=`<div class="hero"><h2>Shaffan &amp; Annisa</h2><p>${dt.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · ${days>0?days+' hari lagi':'hari bahagia'}</p>
+   <div class="strip"><i style="width:${pc}%"></i><b style="left:${pc}%"></b><em style="left:${Math.min(90,Math.max(10,pc))}%">hari ini</em></div><div class="mon">${mons.map(m=>'<span>'+m+'</span>').join('')}</div></div>
+  ${cn?`<a class="next" href="vendor.html#${nc}"><div><small>Langkah berikutnya</small><b>${nv?'Pilih satu dari '+nv+' vendor '+cn[1]:'Cari 2–3 vendor '+cn[1]}</b></div><span class="go">›</span></a>`:'<div class="next"><div><small>Langkah berikutnya</small><b>Semua kategori utama sudah punya vendor. Cek jadwal DP & pelunasan.</b></div></div>'}
+  <div class="tiles"><a class="tile" href="vendor.html"><b class="num">${CATS.filter(c=>c[0]!=='lain'&&all.some(v=>v.cat===c[0]&&chosen(v))).length}/7</b><span>kategori vendor terpilih</span></a>
+   <a class="tile" href="budget.html"><b class="num">${total?Math.round(used/total*100)+'%':R(used)}</b><span>${total?'budget terpakai':'terpilih · isi total budget'}</span></a>
+   <a class="tile" href="planning.html"><b class="num">${tk.length?td+'/'+tk.length:'-'}</b><span>checklist selesai</span></a>
+   <a class="tile" href="daftar.html"><b class="num">${t?t.dn+'/'+t.n:'-'}</b><span>seserahan dibeli</span></a></div>
+  ${[['board.html','💡','Wedding Board','Inspirasi & konsep yang kamu suka'],['grafik.html','📊','Grafik seserahan','Porsi anggaran & progres'],['diet.html','🥗','Program diet','Target & catatan harian']].map(x=>`<a class="menu-item" href="${x[0]}"><div class="menu-icon" style="background:var(--tint)">${x[1]}</div><div class="menu-text"><b>${x[2]}</b><small>${x[3]}</small></div><div class="menu-arrow">›</div></a>`).join('')}
+  <div class="mute" style="text-align:center;margin-top:14px">Versi ${localStorage.app_v||'-'}</div>`;
 };
-</script>
-</body></html>
+drawPage();
+</script></body></html>
